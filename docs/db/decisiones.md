@@ -1,0 +1,12 @@
+# Registro de Decisiones de Arquitectura de Base de Datos (ADR)
+
+| Decisión | Opción Elegida | Alternativa Descartada | Justificación Técnica |
+|---|---|---|---|
+| **1. Ciclo de Vida de Pedidos** | Máquina de estados lineal: `PENDIENTE_PAGO` -> `PAGADO` -> `EN_PREPARACION` -> `ENVIADO` -> `ENTREGADO` (+ `CANCELADO`). | Flags booleanos (`is_paid`, `is_shipped`) separados. | Elimina condiciones de carrera y previene discrepancias de despacho cuando el pago aún no se acreditó. |
+| **2. Carrito de Compras** | Esquema híbrido: LocalStorage para anónimos y sincronización a `carrito_item` al loguearse. | Persistir carritos anónimos en la BD. | Evita saturar la base de datos con carritos abandonados; garantiza experiencia multidispositivo para usuarios registrados. |
+| **3. Atributos Técnicos** | Tipo nativo `JSONB` de PostgreSQL con índices GIN e índices de expresión. | Modelo EAV (Entity-Attribute-Value) o columnas dinámicas. | Flexibilidad para hardware heterogéneo manteniendo consultas ultrarrápidas y validación nativa sin antipatrones. |
+| **4. Estrategia Anti-Overselling** | `UPDATE condicional` (`WHERE stock >= :cantidad`). | Bloqueo Pesimista (`SELECT FOR UPDATE`) o Optimista (`@Version`). | Reduce bloqueos en transacciones largas, evita deadlocks (ordenando por ID), y no sufre reintentos bajo alta contención en productos de stock escaso. |
+| **5. Borrado de Catálogo** | Soft Delete (`activo = false`) con `@SQLRestriction("activo = true")`. | `DELETE CASCADE` físico. | Preserva la trazabilidad legal y contable obligatoria en e-commerce; evita violaciones de FK en pedidos pasados. |
+| **6. Auditoría y Fechas** | Columnas `created_at` / `updated_at` automatizadas con triggers de base de datos y Spring Data JPA Auditing. | Triggers complejos de auditoría con tablas sombra. | Balance óptimo: garantiza actualización incluso en scripts manuales o batches, sin recargar el motor con lógica de negocio. |
+| **7. Versionado de Esquema** | Migraciones SQL planas con **Flyway**; `ddl-auto: validate`. | `ddl-auto: update` de Hibernate. | Previene mutaciones destructivas o silenciosas del esquema en producción y garantiza reproducibilidad exacta en CI/CD. |
+| **8. Manejo de Moneda** | `NUMERIC(12, 2)` en BD y `BigDecimal` (con `RoundingMode.HALF_UP`) en Java. | `DOUBLE` / `FLOAT` o enteros en centavos. | Previene pérdida de precisión por aritmética binaria de punto flotante y cumple normas contables para moneda argentina (ARS). |
