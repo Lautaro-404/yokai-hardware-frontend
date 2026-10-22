@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura del sistema – E-commerce de Hardware</title>
+<style>
+:root{
+  --bg:#0d0a14; --surface:#181226; --line:#3a2b57; --text:#ece6f5; --muted:#a99cc0;
+  --violet:#a07bff; --red:#ef5a5f;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:0 22px 64px}
+h1,h2,h3{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",Georgia,serif;font-weight:700;line-height:1.2}
+header{padding:64px 0 28px;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(2rem,5vw,3.1rem);margin:0 0 14px;letter-spacing:.01em}
+.lead{max-width:62ch;color:var(--muted);margin:0}
+h2{font-size:1.55rem;margin:56px 0 14px}
+h3{font-size:1.08rem;margin:26px 0 6px;color:var(--violet)}
+p{max-width:70ch;margin:0 0 12px}
+a{color:var(--violet)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+code{font:.88em ui-monospace,Menlo,Consolas,monospace;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+.diagram{margin:22px 0 8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px}
+.diagram svg{display:block;width:100%;height:auto}
+.note{color:var(--muted);font-size:.93rem}
+.box{fill:#221936;stroke:var(--violet);stroke-width:1.5}
+.box-opt{fill:none;stroke:var(--red);stroke-width:1.5;stroke-dasharray:6 5}
+.box-db{fill:#2a1424;stroke:var(--red);stroke-width:1.5}
+.grp{fill:none;stroke:var(--line);stroke-width:1.5}
+.t{fill:var(--text);font:600 13px system-ui,sans-serif}
+.s{fill:var(--muted);font:12px system-ui,sans-serif}
+.arr{stroke:var(--violet);stroke-width:1.6;fill:none}
+.arr-opt{stroke:var(--red);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 2px 0;font-size:.9rem;color:var(--muted)}
+.legend i{display:inline-block;width:26px;border-top:2px solid var(--violet);vertical-align:middle;margin-right:7px}
+.legend i.o{border-top:2px dashed var(--red)}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0 28px;margin-top:6px}
+.layers div{border-top:1px solid var(--line);padding-top:4px}
+ol.flow{margin:14px 0;padding-left:1.4em;max-width:72ch}
+ol.flow li{margin-bottom:10px;padding-left:4px}
+.scroll{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.95rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--violet);font-weight:600;border-bottom:1px solid var(--violet)}
+.pend{border-left:3px solid var(--red);padding:2px 0 2px 16px;margin:14px 0}
+footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Arquitectura del sistema</h1>
+  <p class="lead">Cómo está armada la tienda online de hardware y tecnología: qué piezas la componen, cómo se comunican y por dónde pasa una compra, desde que el cliente inicia sesión hasta que el administrador despacha el pedido.</p>
+</header>
+
+<h2>Vista general</h2>
+<p>Es una aplicación web en capas. El navegador habla con el frontend, el frontend consume una API REST hecha en Java y la API guarda todo en una base de datos relacional. Cada capa solo se comunica con la inmediata siguiente.</p>
+
+<div class="diagram">
+<svg viewBox="0 0 760 370" role="img" aria-labelledby="dt dd">
+  <title id="dt">Diagrama de la arquitectura</title>
+  <desc id="dd">El navegador se conecta al frontend, que llama a la API REST de Spring Boot. La API pasa por seguridad, controlador, servicio y repositorio, y guarda los datos en la base de datos. Mercado Pago es una conexión opcional.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#a07bff"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ef5a5f"/></marker>
+  </defs>
+
+  <rect class="box" x="10" y="130" width="130" height="100" rx="8"/>
+  <text class="t" x="75" y="170" text-anchor="middle">Navegador</text>
+  <text class="s" x="75" y="190" text-anchor="middle">Cliente</text>
+  <text class="s" x="75" y="206" text-anchor="middle">Administrador</text>
+
+  <rect class="box" x="190" y="130" width="140" height="100" rx="8"/>
+  <text class="t" x="260" y="170" text-anchor="middle">Frontend</text>
+  <text class="s" x="260" y="190" text-anchor="middle">React</text>
+
+  <rect class="grp" x="380" y="14" width="236" height="336" rx="10"/>
+  <text class="s" x="498" y="36" text-anchor="middle">Backend · Spring Boot (Java 17+)</text>
+
+  <rect class="box" x="400" y="52" width="196" height="54" rx="6"/>
+  <text class="t" x="498" y="76" text-anchor="middle">Seguridad</text>
+  <text class="s" x="498" y="94" text-anchor="middle">filtro JWT y roles</text>
+
+  <rect class="box" x="400" y="124" width="196" height="54" rx="6"/>
+  <text class="t" x="498" y="148" text-anchor="middle">Controller</text>
+  <text class="s" x="498" y="166" text-anchor="middle">endpoints REST y DTOs</text>
+
+  <rect class="box" x="400" y="196" width="196" height="54" rx="6"/>
+  <text class="t" x="498" y="220" text-anchor="middle">Service</text>
+  <text class="s" x="498" y="238" text-anchor="middle">reglas de negocio y transacciones</text>
+
+  <rect class="box" x="400" y="268" width="196" height="54" rx="6"/>
+  <text class="t" x="498" y="292" text-anchor="middle">Repository</text>
+  <text class="s" x="498" y="310" text-anchor="middle">Spring Data JPA</text>
+
+  <rect class="box-db" x="650" y="130" width="100" height="100" rx="8"/>
+  <text class="t" x="700" y="170" text-anchor="middle">Base de datos</text>
+  <text class="s" x="700" y="190" text-anchor="middle">PostgreSQL</text>
+
+  <rect class="box-opt" x="190" y="282" width="140" height="56" rx="8"/>
+  <text class="t" x="260" y="306" text-anchor="middle">Mercado Pago</text>
+  <text class="s" x="260" y="324" text-anchor="middle">extra, modo de prueba</text>
+
+  <path class="arr" d="M140,180 H188" marker-end="url(#a)"/>
+  <path class="arr" d="M330,170 H356 V79 H398" marker-end="url(#a)"/>
+  <text class="s" x="338" y="150" text-anchor="end">HTTPS</text>
+  <text class="s" x="338" y="164" text-anchor="end">JSON</text>
+  <path class="arr" d="M498,106 V122" marker-end="url(#a)"/>
+  <path class="arr" d="M498,178 V194" marker-end="url(#a)"/>
+  <path class="arr" d="M498,250 V266" marker-end="url(#a)"/>
+  <path class="arr" d="M596,295 H632 V205 H648" marker-end="url(#a)"/>
+  <path class="arr-opt" d="M330,310 H378" marker-end="url(#ar)"/>
+</svg>
+<div class="legend"><span><i></i>Componente obligatorio</span><span><i class="o"></i>Componente opcional (extra del plan)</span></div>
+</div>
+<p class="note">El backend en Java está decidido por votación, la base de datos es PostgreSQL y el frontend es React. El hosting es una propuesta que el grupo todavía tiene que confirmar.</p>
+
+<h2>Qué hace cada capa</h2>
+<div class="layers">
+  <div><h3>Frontend</h3><p>Muestra el catálogo, el carrito, el checkout y el panel de administración con la temática yokai. Es responsive y solo se comunica con la API.</p></div>
+  <div><h3>Seguridad</h3><p>Un filtro valida el token JWT de cada pedido. Las contraseñas se guardan con BCrypt y las rutas de administración exigen el rol <code>ADMIN</code>.</p></div>
+  <div><h3>Controller</h3><p>Recibe las peticiones, valida los datos de entrada y responde con DTOs. No contiene lógica de negocio.</p></div>
+  <div><h3>Service</h3><p>Aplica las reglas del negocio: control de stock, armado de pedidos y cálculo de totales. Maneja las transacciones.</p></div>
+  <div><h3>Repository</h3><p>Lee y escribe en la base de datos con Spring Data JPA, usando las entidades del paquete <code>model</code>.</p></div>
+  <div><h3>Base de datos</h3><p>Guarda usuarios, productos, categorías, marcas y pedidos. Es la única fuente de verdad del stock.</p></div>
+</div>
+
+<h2>Estructura del backend</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>Paquete</th><th>Responsabilidad</th></tr></thead>
+  <tbody>
+    <tr><td><code>controller</code></td><td>Endpoints REST. Reciben y devuelven DTOs.</td></tr>
+    <tr><td><code>service</code></td><td>Lógica de negocio y transacciones.</td></tr>
+    <tr><td><code>repository</code></td><td>Acceso a datos con Spring Data JPA.</td></tr>
+    <tr><td><code>model</code></td><td>Entidades JPA que representan las tablas.</td></tr>
+    <tr><td><code>dto</code></td><td>Objetos de entrada y salida de la API; evitan exponer las entidades.</td></tr>
+    <tr><td><code>config</code></td><td>Seguridad, CORS, Swagger y configuración general.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Recorrido de una compra</h2>
+<p>Así viaja una compra por el sistema. Las rutas son de ejemplo: el contrato final de la API se define en la fase de diseño.</p>
+<ol class="flow">
+  <li><strong>Inicio de sesión.</strong> El cliente envía sus credenciales a <code>POST /api/auth/login</code> y recibe un token JWT que el frontend manda en cada pedido siguiente.</li>
+  <li><strong>Catálogo.</strong> <code>GET /api/productos</code> con filtros de marca, precio, categoría y disponibilidad, paginado.</li>
+  <li><strong>Carrito.</strong> El cliente agrega, quita o cambia cantidades con <code>POST /api/carrito/items</code>.</li>
+  <li><strong>Checkout.</strong> <code>POST /api/pedidos</code> con los datos de envío. El servicio valida el stock, crea el Pedido y sus DetallePedido y descuenta el stock en una sola transacción; si algo falla, se revierte todo.</li>
+  <li><strong>Seguimiento.</strong> El cliente ve su historial con <code>GET /api/pedidos/mis-pedidos</code>.</li>
+  <li><strong>Despacho.</strong> El administrador cambia el estado con <code>PATCH /api/admin/pedidos/{id}/estado</code>.</li>
+</ol>
+
+<h2>Modelo de datos</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>Entidad</th><th>Campos principales</th><th>Relaciones</th></tr></thead>
+  <tbody>
+    <tr><td>Usuario</td><td>nombre, email, contraseña, rol, dirección</td><td>Tiene muchos Pedidos y un Carrito</td></tr>
+    <tr><td>Categoría</td><td>nombre, descripción</td><td>Tiene muchos Productos</td></tr>
+    <tr><td>Marca</td><td>nombre</td><td>Tiene muchos Productos</td></tr>
+    <tr><td>Producto</td><td>nombre, descripción, precio, stock, SKU, imagen, especificaciones</td><td>Pertenece a una Categoría y a una Marca</td></tr>
+    <tr><td>Carrito / ItemCarrito</td><td>usuario, producto, cantidad</td><td>Un item por producto y usuario</td></tr>
+    <tr><td>Pedido</td><td>fecha, estado, total, dirección de envío</td><td>Pertenece a un Usuario; tiene muchos DetallePedido</td></tr>
+    <tr><td>DetallePedido</td><td>producto, cantidad, precio unitario</td><td>Pertenece a un Pedido</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">El estado visible del stock (“En stock”, “Últimas unidades”, “Sin stock”) no se guarda: se calcula a partir del stock y del stock mínimo. Si se implementa la reserva temporal durante el pago, se suma la entidad ReservaStock.</p>
+
+<h2>Seguridad y roles</h2>
+<p>Hay dos roles. El <strong>cliente</strong> explora, compra y ve solo sus propios carritos y pedidos. El <strong>administrador</strong> gestiona productos, categorías, stock y estados de pedidos. Las entradas se validan en el controlador y los errores se devuelven con un formato uniforme. Las credenciales viven en variables de entorno y nunca en el repositorio.</p>
+
+<h2>Despliegue</h2>
+<p>El backend y la base de datos gestionada se publican en un servicio como Render, Railway o Fly.io, con variables de entorno para la conexión y las claves. El frontend en React se publica por separado, en Vercel o Netlify, y apunta a la URL pública de la API. El primer despliegue se hace en la primera semana para detectar problemas de hosting a tiempo.</p>
+
+<h2>Decisiones pendientes</h2>
+<div class="pend"><p><strong>Hosting:</strong> qué plataforma de deploy usar, según las condiciones vigentes de los planes gratuitos.</p></div>
+<div class="pend"><p><strong>Extras:</strong> cuál de los diferenciales (armador de PC, filtros por caso de uso, reserva de stock) se suma una vez que el MVP esté desplegado.</p></div>
+
+<footer>
+  Grupo Print("Estoy Cansado Jefe") · Programación IV, UTN San Rafael · Entrega: 10 de noviembre de 2026
+</footer>
+
+</div>
+</body>
+</html>
