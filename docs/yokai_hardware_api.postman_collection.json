@@ -1,0 +1,1066 @@
+{
+  "info": {
+    "_postman_id": "f5a7e112-9c34-4b5c-a11f-889012345678",
+    "name": "Yokai Hardware E-Commerce API",
+    "description": "Colección completa de pruebas end-to-end para la API REST de Yokai Hardware. Cubre los flujos de: 1) Registro y Login (JWT), 2) Catálogo y Filtros, 3) Carrito de Compras persistente, 4) Checkout y Pedidos (atómico anti-overselling), y 5) Panel de Administración (Roles ADMIN, control de estados y ABM).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "clientToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productoId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "carritoItemId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pedidoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoriaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "marcaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoriaCreadaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productoCreadoId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Autenticación y Usuarios",
+      "item": [
+        {
+          "name": "01.1 - Registro Nuevo Cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Retorna token y usuario con rol CLIENTE\", function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "    pm.expect(data.token).to.be.a('string');",
+                  "    pm.expect(data.usuario.rol).to.eql('CLIENTE');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"clientToken\", data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cliente Postman Runner\",\n  \"email\": \"cliente.runner_{{$timestamp}}@yokai.com\",\n  \"password\": \"Cliente123!\",\n  \"direccion\": \"Av. San Martín 850, San Rafael\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "01.2 - Login Cliente Demo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Genera token para CLIENTE\", function () {",
+                  "    pm.expect(data.token).to.be.a('string');",
+                  "    pm.expect(data.usuario.rol).to.eql('CLIENTE');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"clientToken\", data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@yokaihardware.com.ar\",\n  \"password\": \"Cliente123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "01.3 - Login Administrador Demo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Genera token para ADMIN\", function () {",
+                  "    pm.expect(data.token).to.be.a('string');",
+                  "    pm.expect(data.usuario.rol).to.eql('ADMIN');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set(\"adminToken\", data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@yokaihardware.com.ar\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "01.4 - Login Fallido (401 Bad Credentials)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Estructura uniforme de ErrorResponseDto\", function () {",
+                  "    pm.expect(data.status).to.eql(401);",
+                  "    pm.expect(data.error).to.eql(\"Unauthorized\");",
+                  "    pm.expect(data.message).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@yokaihardware.com.ar\",\n  \"password\": \"PasswordIncorrecta999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Catálogo de Productos y Filtros",
+      "item": [
+        {
+          "name": "02.1 - Health Check del Servicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Base de datos operativa\", function () {",
+                  "    pm.expect(data.status).to.eql(\"UP\");",
+                  "    pm.expect(data.database).to.eql(\"UP\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          }
+        },
+        {
+          "name": "02.2 - Listar Categorías",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Devuelve lista de categorías\", function () {",
+                  "    pm.expect(data).to.be.an('array');",
+                  "    pm.expect(data.length).to.be.above(0);",
+                  "});",
+                  "if (data.length > 0) {",
+                  "    pm.collectionVariables.set(\"categoriaId\", data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categorias"]
+            }
+          }
+        },
+        {
+          "name": "02.3 - Listar Marcas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Devuelve lista de marcas\", function () {",
+                  "    pm.expect(data).to.be.an('array');",
+                  "    pm.expect(data.length).to.be.above(0);",
+                  "});",
+                  "if (data.length > 0) {",
+                  "    pm.collectionVariables.set(\"marcaId\", data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marcas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "marcas"]
+            }
+          }
+        },
+        {
+          "name": "02.4 - Listar Catálogo Completo (Paginado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Contiene items y paginación\", function () {",
+                  "    pm.expect(data.content).to.be.an('array');",
+                  "    pm.expect(data.totalElements).to.be.above(0);",
+                  "});",
+                  "var conStock = data.content.find(p => p.stock > 1);",
+                  "if (conStock) {",
+                  "    pm.collectionVariables.set(\"productoId\", conStock.id);",
+                  "} else if (data.content.length > 0) {",
+                  "    pm.collectionVariables.set(\"productoId\", data.content[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "productos"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "02.5 - Catálogo Facetado (Filtros Combinados)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Los resultados cumplen filtros aplicados\", function () {",
+                  "    pm.expect(data.content).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos?categoria=Oni&disponibilidad=EN_STOCK&page=0&size=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "productos"],
+              "query": [
+                {
+                  "key": "categoria",
+                  "value": "Oni"
+                },
+                {
+                  "key": "disponibilidad",
+                  "value": "EN_STOCK"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "02.6 - Detalle de Producto por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Ficha técnica con campos del modelo\", function () {",
+                  "    pm.expect(data).to.have.property('id');",
+                  "    pm.expect(data).to.have.property('nombre');",
+                  "    pm.expect(data).to.have.property('precio');",
+                  "    pm.expect(data).to.have.property('stock');",
+                  "    pm.expect(data).to.have.property('estadoStock');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "productos", "{{productoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Carrito de Compras (Cliente)",
+      "item": [
+        {
+          "name": "03.1 - Vaciar Carrito Previo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Carrito queda sin items\", function () {",
+                  "    pm.expect(data.items.length).to.eql(0);",
+                  "    pm.expect(data.total).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "carrito"]
+            }
+          }
+        },
+        {
+          "name": "03.2 - Agregar Item al Carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Calcula subtotales y total en servidor\", function () {",
+                  "    pm.expect(data.items.length).to.be.above(0);",
+                  "    pm.expect(data.total).to.be.above(0);",
+                  "});",
+                  "if (data.items && data.items.length > 0) {",
+                  "    pm.collectionVariables.set(\"carritoItemId\", data.items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{productoId}},\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "carrito", "items"]
+            }
+          }
+        },
+        {
+          "name": "03.3 - Modificar Cantidad en Carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Actualiza la cantidad\", function () {",
+                  "    pm.expect(data.cantidadTotal).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/items/{{carritoItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "carrito", "items", "{{carritoItemId}}"]
+            }
+          }
+        },
+        {
+          "name": "03.4 - Obtener Carrito Actualizado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Carrito con items válidos\", function () {",
+                  "    pm.expect(data.items.length).to.eql(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "carrito"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Checkout y Pedidos (Cliente)",
+      "item": [
+        {
+          "name": "04.1 - Confirmar Pedido (Checkout Atómico)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Pedido creado con estado inicial PENDIENTE_PAGO\", function () {",
+                  "    pm.expect(data).to.have.property('id');",
+                  "    pm.expect(data.estado).to.eql(\"PENDIENTE_PAGO\");",
+                  "    pm.expect(data.detalles.length).to.be.above(0);",
+                  "    pm.expect(data.total).to.be.above(0);",
+                  "});",
+                  "if (data.id) {",
+                  "    pm.collectionVariables.set(\"pedidoId\", data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccionEnvio\": \"Av. San Martín 850, San Rafael, Mendoza (CP 5600)\",\n  \"metodoPago\": \"Transferencia Bancaria\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pedidos"]
+            }
+          }
+        },
+        {
+          "name": "04.2 - Historial Mis Pedidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"El historial contiene la orden recién creada\", function () {",
+                  "    pm.expect(data).to.be.an('array');",
+                  "    var pedidoCreado = data.find(p => p.id == pm.collectionVariables.get(\"pedidoId\"));",
+                  "    pm.expect(pedidoCreado).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/mis-pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pedidos", "mis-pedidos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Panel de Administración (ADMIN)",
+      "item": [
+        {
+          "name": "05.1 - Listar Todos los Pedidos (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Retorna lista de pedidos con datos del cliente\", function () {",
+                  "    pm.expect(data).to.be.an('array');",
+                  "    pm.expect(data.length).to.be.above(0);",
+                  "    pm.expect(data[0]).to.have.property('usuarioNombre');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "pedidos"]
+            }
+          }
+        },
+        {
+          "name": "05.2 - Cambiar Estado a PAGADO (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Estado avanza a PAGADO\", function () {",
+                  "    pm.expect(data.estado).to.eql(\"PAGADO\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"PAGADO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/pedidos/{{pedidoId}}/estado",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "pedidos", "{{pedidoId}}", "estado"]
+            }
+          }
+        },
+        {
+          "name": "05.3 - Cambiar Estado a EN_PREPARACION (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Estado avanza a EN_PREPARACION\", function () {",
+                  "    pm.expect(data.estado).to.eql(\"EN_PREPARACION\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_PREPARACION\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/pedidos/{{pedidoId}}/estado",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "pedidos", "{{pedidoId}}", "estado"]
+            }
+          }
+        },
+        {
+          "name": "05.4 - Alerta de Stock Bajo (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Lista productos con stock crítico\", function () {",
+                  "    pm.expect(data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/productos/stock-bajo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "productos", "stock-bajo"]
+            }
+          }
+        },
+        {
+          "name": "05.5 - Crear Categoría (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "if (data.id) {",
+                  "    pm.collectionVariables.set(\"categoriaCreadaId\", data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Perifericos_{{$timestamp}}\",\n  \"subtitulo\": \"Teclados y mouse mecánicos\",\n  \"descripcion\": \"Línea de periféricos de alta respuesta\",\n  \"kanji\": \"器\",\n  \"icono\": \"keyboard\",\n  \"acento\": \"violet\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categorias"]
+            }
+          }
+        },
+        {
+          "name": "05.6 - Crear Producto (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Retorna producto creado con SKU\", function () {",
+                  "    pm.expect(data).to.have.property('id');",
+                  "    pm.expect(data).to.have.property('sku');",
+                  "});",
+                  "if (data.id) {",
+                  "    pm.collectionVariables.set(\"productoCreadoId\", data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mouse Gamer Kitsune Speed {{$timestamp}}\",\n  \"categoria\": \"Oni\",\n  \"marca\": \"ASUS\",\n  \"precio\": 65000.00,\n  \"stock\": 12,\n  \"stockMinimo\": 3,\n  \"imagen\": \"https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7\",\n  \"subtituloCorto\": \"Sensor óptico 26000 DPI\",\n  \"descripcion\": \"Mouse ultraliviano con switches mecánicos ópticos\",\n  \"especificaciones\": {\n    \"dpi\": 26000,\n    \"peso_g\": 59,\n    \"conectividad\": \"Wireless 2.4GHz + BT\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "productos"]
+            }
+          }
+        },
+        {
+          "name": "05.7 - Seguridad: Rechazo de Acceso a Admin con Rol CLIENTE (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code es 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test(\"Formato uniforme ErrorResponseDto 403\", function () {",
+                  "    pm.expect(data.status).to.eql(403);",
+                  "    pm.expect(data.error).to.eql(\"Forbidden\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "pedidos"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

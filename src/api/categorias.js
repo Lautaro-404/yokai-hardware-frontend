@@ -1,4 +1,4 @@
-import apiClient, { USE_MOCKS } from './client';
+import apiClient, { ApiError, USE_MOCKS } from './client';
 import { mockStorage, delay } from '../mocks/mockStorage';
 
 /**
@@ -26,6 +26,26 @@ export async function getCategorias() {
 }
 
 /**
+ * GET /api/categorias/{id}
+ */
+export async function getCategoriaById(id) {
+  if (!USE_MOCKS) {
+    const { data } = await apiClient.get(`/api/categorias/${id}`);
+    return data;
+  }
+
+  await delay(120);
+  const found = mockStorage.getCategorias().find((c) => Number(c.id) === Number(id));
+  if (!found) {
+    throw new ApiError({
+      message: 'La categoría solicitada no fue encontrada.',
+      status: 404,
+    });
+  }
+  return found;
+}
+
+/**
  * POST /api/categorias (ADMIN)
  */
 export async function createCategoria(payload) {
@@ -36,6 +56,14 @@ export async function createCategoria(payload) {
 
   await delay(200);
   const categorias = mockStorage.getCategorias();
+  const nombreNorm = String(payload.nombre || '').trim().toLowerCase();
+  if (categorias.some((c) => String(c.nombre).trim().toLowerCase() === nombreNorm)) {
+    throw new ApiError({
+      message: 'Ya existe una categoría con ese nombre.',
+      status: 409,
+    });
+  }
+
   const nuevoId = categorias.reduce((max, c) => Math.max(max, Number(c.id) || 0), 0) + 1;
   const nueva = {
     id: nuevoId,
@@ -65,7 +93,12 @@ export async function updateCategoria(id, payload) {
   await delay(200);
   const categorias = mockStorage.getCategorias();
   const idx = categorias.findIndex((c) => Number(c.id) === Number(id));
-  if (idx === -1) throw new Error('Categoría no encontrada.');
+  if (idx === -1) {
+    throw new ApiError({
+      message: 'Categoría no encontrada.',
+      status: 404,
+    });
+  }
 
   categorias[idx] = {
     ...categorias[idx],

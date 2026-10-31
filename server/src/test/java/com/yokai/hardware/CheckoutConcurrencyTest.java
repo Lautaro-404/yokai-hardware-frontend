@@ -36,7 +36,10 @@ public class CheckoutConcurrencyTest extends AbstractPostgresIntegrationTest {
     @DisplayName("20 compras concurrentes sobre un producto con stock=2 deben permitir exactamente 2 ventas y dejar stock en 0")
     void testAntiOversellingConcurrente() throws InterruptedException {
         // Setup: Crear un producto con solo 2 unidades disponibles
-        Categoria cat = categoriaRepository.findAll().get(0);
+        productoRepository.findBySku("GPU-TEST-ESCASA-4090").ifPresent(productoRepository::delete);
+        productoRepository.flush();
+        Categoria cat = categoriaRepository.findByNombreIgnoreCase("Oni")
+                .orElseGet(() -> categoriaRepository.findAll().get(0));
         Marca marca = marcaRepository.findAll().get(0);
 
         Producto gpuEscasa = new Producto();
@@ -47,7 +50,7 @@ public class CheckoutConcurrencyTest extends AbstractPostgresIntegrationTest {
         gpuEscasa.setStockMinimo(1);
         gpuEscasa.setCategoria(cat);
         gpuEscasa.setMarca(marca);
-        gpuEscasa.setEspecificaciones(Map.of("tdp_w", 450, "length_mm": 350));
+        gpuEscasa.setEspecificaciones(Map.of("tdp_w", 450, "length_mm", 350));
         gpuEscasa = productoRepository.saveAndFlush(gpuEscasa);
 
         final Long productoId = gpuEscasa.getId();
@@ -90,5 +93,7 @@ public class CheckoutConcurrencyTest extends AbstractPostgresIntegrationTest {
         // Stock final verificado en base de datos
         Producto productoFinal = productoRepository.findById(productoId).orElseThrow();
         assertEquals(0, productoFinal.getStock(), "El stock final debe ser exactamente 0, sin overselling");
+        productoRepository.delete(productoFinal);
+        productoRepository.flush();
     }
 }

@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate, useSearchParams, useLocation } from 'react-
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { formatARS } from '../../utils/formatters';
-import { YOKAI_LOGO_URL } from '../../mocks/productosMock';
+import { STORE_LOGO_URL } from '../../utils/constants';
 
 export default function Header() {
   const { totalItems, subtotal } = useCart();
@@ -22,6 +22,12 @@ export default function Header() {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname, location.search]);
+
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+    navigate('/');
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -42,7 +48,7 @@ export default function Header() {
             <img
               alt="Yokai Hardware Kitsune Logo"
               className="h-8 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]"
-              src={YOKAI_LOGO_URL}
+              src={STORE_LOGO_URL}
             />
             <div className="flex flex-col">
               <div className="flex items-center gap-space-xs">
@@ -151,18 +157,32 @@ export default function Header() {
             )}
 
             {!isAuthenticated && (
-              <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  `font-label-lg text-label-lg px-3 py-2 rounded transition-colors ${
-                    isActive
-                      ? 'bg-primary-container text-on-primary font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface-bright'
-                  }`
-                }
-              >
-                Mi cuenta
-              </NavLink>
+              <>
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) =>
+                    `font-label-lg text-label-lg px-3 py-2 rounded transition-colors ${
+                      isActive
+                        ? 'bg-primary-container text-on-primary font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface-bright'
+                    }`
+                  }
+                >
+                  Iniciar sesión
+                </NavLink>
+                <NavLink
+                  to="/registro"
+                  className={({ isActive }) =>
+                    `font-label-lg text-label-lg px-3 py-2 rounded transition-colors border ${
+                      isActive
+                        ? 'bg-vermilion text-white font-bold border-secondary/30'
+                        : 'text-primary border-primary-container/40 hover:text-primary-fixed'
+                    }`
+                  }
+                >
+                  Registrarse
+                </NavLink>
+              </>
             )}
           </nav>
 
@@ -214,8 +234,9 @@ export default function Header() {
                   </div>
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
                   className="w-9 h-9 rounded bg-surface-container-low hover:bg-secondary-container/40 border border-outline-variant/50 hover:border-vermilion text-outline hover:text-secondary flex items-center justify-center transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
@@ -306,7 +327,7 @@ export default function Header() {
                   </Link>
                 )}
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="mt-2 px-3 py-2 rounded bg-secondary-container/30 border border-vermilion/40 text-secondary font-label-lg text-left flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>

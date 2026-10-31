@@ -87,5 +87,5 @@ psql "<CONNECTION_STRING>" -f db/validacion.sql
 - [x] **Restricción UNIQUE compuesta** en `carrito_item(usuario_id, producto_id)`.
 - [x] **Restricciones CHECK activas**: precios positivos, stock no negativo, estados legales.
 - [x] **Índices presentes**: B-Tree facetados, GIN `jsonb_path_ops`, expresión sobre `socket`, GIN trigram en `nombre`.
-- [x] **24 productos iniciales** con estado de inventario (`estado_stock`) calculado correctamente en disco.
+- [x] **24 productos iniciales** con stock y stock mínimo cargados (el estado de stock se calcula en la aplicación, no se guarda).
 - [x] **Usuarios semilla**: Admin y Clientes listos para autenticación BCrypt.

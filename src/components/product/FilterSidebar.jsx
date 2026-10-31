@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
+const OPCIONES_DISPONIBILIDAD = [
+  { value: '', label: 'Todas las existencias' },
+  { value: 'EN_STOCK', label: 'En stock' },
+  { value: 'ULTIMAS_UNIDADES', label: 'Últimas unidades' },
+  { value: 'SIN_STOCK', label: 'Sin stock' },
+];
+
 export default function FilterSidebar({
   categorias = [],
   marcas = [],
@@ -26,6 +33,7 @@ export default function FilterSidebar({
   const hasActiveFilters = Boolean(
     filtros.categoria ||
       filtros.marca ||
+      filtros.disponibilidad ||
       filtros.precioMin ||
       filtros.precioMax ||
       filtros.q
@@ -99,6 +107,36 @@ export default function FilterSidebar({
                   </span>
                 </div>
                 <span className="font-serif text-sm">{cat.kanji}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Disponibilidad de Stock */}
+      <div className="flex flex-col gap-space-sm pt-space-sm border-t border-outline-variant/40">
+        <span className="font-label-md text-label-md text-primary uppercase tracking-wider font-semibold">
+          Disponibilidad
+        </span>
+        <div className="flex flex-col gap-1">
+          {OPCIONES_DISPONIBILIDAD.map((opt) => {
+            const active = (filtros.disponibilidad || '') === opt.value;
+            return (
+              <button
+                key={opt.value || 'ALL'}
+                type="button"
+                onClick={() =>
+                  onChangeFiltro({
+                    disponibilidad: active && opt.value !== '' ? '' : opt.value,
+                  })
+                }
+                className={`w-full text-left px-3 py-2 rounded font-body-sm text-body-sm flex items-center justify-between transition-colors ${
+                  active
+                    ? 'bg-primary-container text-on-primary font-bold'
+                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface-bright'
+                }`}
+              >
+                <span>{opt.label}</span>
               </button>
             );
           })}

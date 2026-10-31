@@ -58,11 +58,10 @@ export default function RegisterPage() {
       showToast(`¡Cuenta creada con éxito! Bienvenido, ${user.nombre}.`, 'success');
       navigate('/');
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'No se pudo completar el registro.';
-      setFormError(msg);
+      if (err?.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...err.fieldErrors }));
+      }
+      setFormError(err?.message || 'No se pudo completar el registro.');
     }
   };
 
@@ -89,7 +88,7 @@ export default function RegisterPage() {
         </div>
 
         {formError && (
-          <div className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2">
+          <div role="alert" className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">error</span>
             <span>{formError}</span>
           </div>

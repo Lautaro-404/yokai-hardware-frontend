@@ -91,7 +91,7 @@ SELECT
     p.precio,
     p.stock,
     p.stock_minimo,
-    p.estado_stock
+    CASE WHEN p.stock <= 0 THEN 'SIN_STOCK' WHEN p.stock <= p.stock_minimo THEN 'ULTIMAS_UNIDADES' ELSE 'EN_STOCK' END AS estado_stock
 FROM producto p
 JOIN categoria c ON p.categoria_id = c.id
 JOIN marca m ON p.marca_id = m.id

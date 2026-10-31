@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,6 +18,19 @@ import java.util.Optional;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findBySku(String sku);
+    boolean existsBySku(String sku);
+
+    long countByCategoriaId(Long categoriaId);
+    long countByCategoriaNombreIgnoreCase(String categoriaNombre);
+
+    long countByMarcaId(Long marcaId);
+    long countByMarcaNombreIgnoreCase(String marcaNombre);
+
+    @Query(value = "SELECT COUNT(*) FROM producto WHERE categoria_id = :categoriaId", nativeQuery = true)
+    long countProductosByCategoriaId(@Param("categoriaId") Long categoriaId);
+
+    @Query(value = "SELECT COUNT(*) FROM producto WHERE marca_id = :marcaId", nativeQuery = true)
+    long countProductosByMarcaId(@Param("marcaId") Long marcaId);
 
     /**
      * DESCUENTO ATÓMICO ANTI-OVERSELLING
@@ -24,6 +38,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * Retorna 1 si el stock fue descontado exitosamente, o 0 si no había stock suficiente
      * o el producto fue desactivado.
      */
+    @Transactional
     @Modifying
     @Query("""
         UPDATE Producto p
@@ -38,6 +53,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /**
      * RESTITUCIÓN DE STOCK (Por cancelación de pedidos pagados o fallas en el proceso)
      */
+    @Transactional
     @Modifying
     @Query("""
         UPDATE Producto p
@@ -48,20 +64,32 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     int restituirStock(@Param("id") Long id, @Param("cantidad") Integer cantidad);
 
     /**
-     * Catálogo facetado con filtros opcionales
+     * Catálogo facetado con filtros opcionales (búsqueda por texto, categoría, marca, rango de precio)
      */
     @Query("""
         SELECT p FROM Producto p
-        WHERE (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
-          AND (:marcaId IS NULL OR p.marca.id = :marcaId)
+        WHERE (:categoriaNombre IS NULL OR :categoriaNombre = '' OR LOWER(p.categoria.nombre) = LOWER(:categoriaNombre))
+          AND (:marcaNombre IS NULL OR :marcaNombre = '' OR LOWER(p.marca.nombre) = LOWER(:marcaNombre))
           AND (:precioMin IS NULL OR p.precio >= :precioMin)
           AND (:precioMax IS NULL OR p.precio <= :precioMax)
+          AND (:q IS NULL OR :q = '' 
+               OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :q, '%'))
+               OR LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :q, '%'))
+               OR LOWER(p.marca.nombre) LIKE LOWER(CONCAT('%', :q, '%'))
+               OR LOWER(p.categoria.nombre) LIKE LOWER(CONCAT('%', :q, '%')))
+          AND (:disponibilidad IS NULL OR :disponibilidad = ''
+               OR (:disponibilidad = 'SIN_STOCK' AND p.stock <= 0)
+               OR (:disponibilidad = 'ULTIMAS_UNIDADES' AND p.stock > 0 AND p.stock <= p.stockMinimo)
+               OR (:disponibilidad = 'EN_STOCK' AND p.stock > p.stockMinimo AND p.stock > 0)
+               OR (:disponibilidad = 'DISPONIBLE' AND p.stock > 0))
     """)
-    Page<Producto> buscarCatalogoFacetado(
-        @Param("categoriaId") Long categoriaId,
-        @Param("marcaId") Long marcaId,
+    Page<Producto> buscarCatalogo(
+        @Param("categoriaNombre") String categoriaNombre,
+        @Param("marcaNombre") String marcaNombre,
         @Param("precioMin") BigDecimal precioMin,
         @Param("precioMax") BigDecimal precioMax,
+        @Param("q") String q,
+        @Param("disponibilidad") String disponibilidad,
         Pageable pageable
     );
 

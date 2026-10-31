@@ -14,8 +14,11 @@ import java.util.List;
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
-    @Query("SELECT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.producto WHERE p.usuario.id = :usuarioId ORDER BY p.fecha DESC")
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.producto WHERE p.usuario.id = :usuarioId ORDER BY p.fecha DESC")
     List<Pedido> findHistorialCompletoByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    @Query("SELECT DISTINCT p FROM Pedido p LEFT JOIN FETCH p.detalles d LEFT JOIN FETCH d.producto LEFT JOIN FETCH p.usuario ORDER BY p.fecha DESC")
+    List<Pedido> findAllWithDetallesAndUsuario();
 
     Page<Pedido> findByEstadoOrderByFechaDesc(EstadoPedido estado, Pageable pageable);
 }

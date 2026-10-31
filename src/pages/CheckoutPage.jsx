@@ -4,7 +4,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { crearPedido } from '../api/pedidos';
-import { formatARS, getTransferPrice, formatDateAR } from '../utils/formatters';
+import { formatARS, formatDateAR } from '../utils/formatters';
+import { ESTADO_PEDIDO_LABEL } from '../utils/constants';
 import EmptyState from '../components/ui/EmptyState';
 
 const PROVINCIAS_AR = [
@@ -48,18 +49,11 @@ export default function CheckoutPage() {
     codigoPostal: '5600',
     telefono: '',
     metodoPago: 'transferencia',
-    notas: '',
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState(null);
-
-  const envioGratis = subtotal >= 250000 || subtotal === 0;
-  const costoEnvio = envioGratis ? 0 : 12500;
-  const esTransferencia = shipping.metodoPago === 'transferencia';
-  const totalAPagar =
-    (esTransferencia ? getTransferPrice(subtotal) : subtotal) + costoEnvio;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -98,10 +92,8 @@ export default function CheckoutPage() {
 
     const metodoLabel =
       shipping.metodoPago === 'transferencia'
-        ? 'Transferencia Bancaria (-10% OFF)'
-        : shipping.metodoPago === 'tarjeta_6'
-        ? 'Tarjeta de Crédito (6 cuotas fijas)'
-        : 'Mercado Pago / Dinero en cuenta';
+        ? 'Transferencia Bancaria'
+        : 'Tarjeta de Crédito';
 
     setSubmitting(true);
     try {
@@ -109,16 +101,14 @@ export default function CheckoutPage() {
         direccionEnvio: direccionCompleta,
         metodoPago: metodoLabel,
         items,
-        total: totalAPagar,
+        total: subtotal,
       });
       setConfirmedOrder(pedidoCreado);
       clearCart();
       showToast(`¡Pedido #${pedidoCreado.id} confirmado con éxito!`, 'success');
     } catch (err) {
       setSubmitError(
-        err?.response?.data?.message ||
-          err?.message ||
-          'No se pudo registrar el pedido. Intentá nuevamente.'
+        err?.message || 'No se pudo registrar el pedido. Intentá nuevamente.'
       );
     } finally {
       setSubmitting(false);
@@ -146,7 +136,7 @@ export default function CheckoutPage() {
             ¡Gracias por tu compra, {usuario?.nombre}!
           </h1>
           <p className="font-body-md text-body-md text-outline mt-2">
-            Tu pedido fue registrado y el stock ya fue reservado para despacho asegurado.
+            Tu pedido fue registrado y el stock ya fue descontado en una transacción atómica.
           </p>
 
           <div className="my-space-lg p-space-md rounded bg-surface-container-lowest border border-outline-variant/60 flex flex-col gap-2.5 font-body-sm">
@@ -165,7 +155,7 @@ export default function CheckoutPage() {
             <div className="flex items-center justify-between">
               <span className="text-outline">Estado Inicial:</span>
               <span className="px-2.5 py-0.5 rounded bg-surface-container-high border border-primary-container/50 text-primary font-label-sm uppercase">
-                {confirmedOrder.estado}
+                {ESTADO_PEDIDO_LABEL[confirmedOrder.estado] || confirmedOrder.estado}
               </span>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-2 border-t border-outline-variant/40">
@@ -176,7 +166,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40">
               <span className="font-label-lg text-on-surface-bright uppercase">
-                Total Abonado:
+                Total Confirmado:
               </span>
               <span className="font-headline-md text-secondary font-bold">
                 {formatARS(confirmedOrder.total)}
@@ -421,13 +411,13 @@ export default function CheckoutPage() {
                     <span className="font-headline-sm text-[16px] text-on-surface-bright block">
                       Transferencia o Depósito Bancario (CBU / Alias)
                     </span>
-                    <span className="font-body-sm text-body-sm text-secondary font-semibold">
-                      10% de descuento directo aplicado sobre el subtotal
+                    <span className="font-body-sm text-body-sm text-outline">
+                      Confirmación de pago mediante comprobante bancario
                     </span>
                   </div>
                 </div>
                 <span className="font-headline-sm text-[17px] text-primary font-bold">
-                  {formatARS(getTransferPrice(subtotal) + costoEnvio)}
+                  {formatARS(subtotal)}
                 </span>
               </label>
 
@@ -449,15 +439,15 @@ export default function CheckoutPage() {
                   />
                   <div>
                     <span className="font-headline-sm text-[16px] text-on-surface-bright block">
-                      Tarjeta de Crédito Bancaria (Hasta 6 Cuotas Fijas)
+                      Tarjeta de Crédito Bancaria
                     </span>
                     <span className="font-body-sm text-body-sm text-outline">
-                      Acreditación instantánea a precio de lista
+                      Acreditación a precio oficial de lista
                     </span>
                   </div>
                 </div>
                 <span className="font-headline-sm text-[17px] text-on-surface-bright font-bold">
-                  {formatARS(subtotal + costoEnvio)}
+                  {formatARS(subtotal)}
                 </span>
               </label>
             </div>
@@ -472,56 +462,47 @@ export default function CheckoutPage() {
             </h3>
 
             <div className="flex flex-col gap-3 max-h-72 overflow-y-auto pr-1">
-              {items.map(({ producto, cantidad }) => (
-                <div
-                  key={producto.id}
-                  className="flex items-center justify-between gap-3 p-2.5 rounded bg-surface-container-lowest border border-outline-variant/40"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="w-12 h-12 object-contain rounded bg-surface-container p-1 shrink-0"
-                    />
-                    <div>
-                      <p className="font-body-sm text-body-sm text-on-surface-bright font-medium line-clamp-1">
-                        {producto.nombre}
-                      </p>
-                      <span className="font-label-sm text-label-sm text-outline">
-                        Cantidad: {cantidad} u. × {formatARS(producto.precio)}
-                      </span>
+              {items.map((item) => {
+                const { producto, cantidad } = item;
+                const lineSubtotal =
+                  item.subtotal !== undefined
+                    ? Number(item.subtotal)
+                    : Number(producto.precio || 0) * Number(cantidad || 0);
+                return (
+                  <div
+                    key={item.id || producto.id}
+                    className="flex items-center justify-between gap-3 p-2.5 rounded bg-surface-container-lowest border border-outline-variant/40"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={producto.imagen}
+                        alt={producto.nombre}
+                        className="w-12 h-12 object-contain rounded bg-surface-container p-1 shrink-0"
+                      />
+                      <div>
+                        <p className="font-body-sm text-body-sm text-on-surface-bright font-medium line-clamp-1">
+                          {producto.nombre}
+                        </p>
+                        <span className="font-label-sm text-label-sm text-outline">
+                          Cantidad: {cantidad} u. × {formatARS(producto.precio)}
+                        </span>
+                      </div>
                     </div>
+                    <span className="font-label-lg text-on-surface-bright font-bold shrink-0">
+                      {formatARS(lineSubtotal)}
+                    </span>
                   </div>
-                  <span className="font-label-lg text-on-surface-bright font-bold shrink-0">
-                    {formatARS(producto.precio * cantidad)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="pt-space-sm border-t border-outline-variant/40 flex flex-col gap-2 font-body-sm">
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Subtotal Lista</span>
-                <span>{formatARS(subtotal)}</span>
-              </div>
-              {esTransferencia && (
-                <div className="flex justify-between text-secondary">
-                  <span>Bonificación Transferencia (-10%)</span>
-                  <span>- {formatARS(subtotal - getTransferPrice(subtotal))}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-on-surface-variant">
-                <span>Envío Asegurado Andreani</span>
-                <span className="text-tertiary font-semibold">
-                  {envioGratis ? 'GRATIS' : formatARS(costoEnvio)}
-                </span>
-              </div>
-              <div className="flex justify-between items-baseline pt-2 border-t border-outline-variant/40">
+              <div className="flex justify-between items-baseline pt-2">
                 <span className="font-label-lg text-on-surface-bright uppercase">
                   Total a Pagar
                 </span>
                 <span className="font-headline-lg text-headline-lg-mobile text-primary font-bold">
-                  {formatARS(totalAPagar)}
+                  {formatARS(subtotal)}
                 </span>
               </div>
             </div>

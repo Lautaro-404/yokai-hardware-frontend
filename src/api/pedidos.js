@@ -1,5 +1,6 @@
-import apiClient, { USE_MOCKS, USER_STORAGE_KEY } from './client';
+import apiClient, { ApiError, USE_MOCKS, USER_STORAGE_KEY } from './client';
 import { mockStorage, delay } from '../mocks/mockStorage';
+import { getAllPedidosAdmin, updateEstadoPedido } from './admin';
 
 function getCurrentMockUser() {
   try {
@@ -12,18 +13,14 @@ function getCurrentMockUser() {
 
 /**
  * POST /api/pedidos
- * Modelo Pedido: { id, fecha, estado, total, direccionEnvio, detalles[] }
+ * Envía CheckoutRequestDto: { direccionEnvio, metodoPago }
+ * Devuelve PedidoResponseDto: { id, fecha, estado, total, direccionEnvio, metodoPago, detalles[] }
  */
-export async function crearPedido({ direccionEnvio, metodoPago, items, total }) {
+export async function crearPedido({ direccionEnvio, metodoPago, items = [] }) {
   if (!USE_MOCKS) {
     const payload = {
       direccionEnvio,
       metodoPago,
-      detalles: items.map((i) => ({
-        productoId: i.producto.id,
-        cantidad: i.cantidad,
-        precioUnitario: i.producto.precio,
-      })),
     };
     const { data } = await apiClient.post('/api/pedidos', payload);
     return data;
@@ -32,25 +29,32 @@ export async function crearPedido({ direccionEnvio, metodoPago, items, total }) 
   await delay(400);
   const user = getCurrentMockUser();
   if (!user) {
-    const err = new Error('Debés iniciar sesión para confirmar un pedido.');
-    err.status = 401;
-    throw err;
+    throw new ApiError({
+      message: 'Debés iniciar sesión para confirmar un pedido.',
+      status: 401,
+    });
   }
 
   const productos = mockStorage.getProductos();
 
   // Validar y descontar stock
+  let totalCalculado = 0;
   for (const item of items) {
     const prodIdx = productos.findIndex((p) => Number(p.id) === Number(item.producto.id));
     if (prodIdx === -1) {
-      throw new Error(`El producto "${item.producto.nombre}" ya no existe.`);
+      throw new ApiError({
+        message: `El producto "${item.producto.nombre}" ya no existe.`,
+        status: 404,
+      });
     }
     if (productos[prodIdx].stock < item.cantidad) {
-      throw new Error(
-        `Stock insuficiente para "${productos[prodIdx].nombre}". Disponible: ${productos[prodIdx].stock} u.`
-      );
+      throw new ApiError({
+        message: `Stock insuficiente para "${productos[prodIdx].nombre}". Disponible: ${productos[prodIdx].stock} u.`,
+        status: 409,
+      });
     }
     productos[prodIdx].stock -= item.cantidad;
+    totalCalculado += Number(productos[prodIdx].precio) * Number(item.cantidad);
   }
   mockStorage.saveProductos(productos);
 
@@ -64,8 +68,8 @@ export async function crearPedido({ direccionEnvio, metodoPago, items, total }) 
     usuarioNombre: user.nombre,
     usuarioEmail: user.email,
     fecha: new Date().toISOString(),
-    estado: 'PENDIENTE',
-    total: Number(total),
+    estado: 'PENDIENTE_PAGO',
+    total: totalCalculado,
     metodoPago: metodoPago || 'Transferencia Bancaria',
     direccionEnvio,
     detalles: items.map((i) => ({
@@ -104,33 +108,4 @@ export async function getMisPedidos() {
   );
 }
 
-/**
- * GET /api/pedidos (ADMIN)
- */
-export async function getAllPedidosAdmin() {
-  if (!USE_MOCKS) {
-    const { data } = await apiClient.get('/api/pedidos');
-    return data;
-  }
-
-  await delay(220);
-  return mockStorage.getPedidos();
-}
-
-/**
- * PUT /api/pedidos/{id}/estado (ADMIN)
- */
-export async function updateEstadoPedido(id, estado) {
-  if (!USE_MOCKS) {
-    const { data } = await apiClient.put(`/api/pedidos/${id}/estado`, { estado });
-    return data;
-  }
-
-  await delay(200);
-  const pedidos = mockStorage.getPedidos();
-  const idx = pedidos.findIndex((p) => Number(p.id) === Number(id));
-  if (idx === -1) throw new Error('Pedido no encontrado.');
-  pedidos[idx].estado = estado;
-  mockStorage.savePedidos(pedidos);
-  return pedidos[idx];
-}
+export { getAllPedidosAdmin, updateEstadoPedido };

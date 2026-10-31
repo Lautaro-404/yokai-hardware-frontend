@@ -1,8 +1,34 @@
-import apiClient, { USE_MOCKS } from './client';
+import apiClient, { ApiError, USE_MOCKS } from './client';
 import { mockStorage, delay } from '../mocks/mockStorage';
+import { DEFAULT_HERO_IMAGE_URL } from '../utils/constants';
+
+function calcularEstadoStockMock(stock, stockMinimo = 3) {
+  const existencias = Number(stock ?? 0);
+  const minimo = Number(stockMinimo ?? 3);
+  if (existencias <= 0) return 'Sin stock';
+  if (existencias <= minimo) return 'Últimas unidades';
+  return 'En stock';
+}
+
+function enrichMockProducto(p) {
+  const stock = Math.max(0, Number(p.stock ?? 0));
+  const stockMinimo = Math.max(0, Number(p.stockMinimo ?? 3));
+  const sku =
+    p.sku ||
+    `${String(p.categoria || 'PRD')
+      .slice(0, 3)
+      .toUpperCase()}-000${p.id}`;
+  return {
+    ...p,
+    sku,
+    stock,
+    stockMinimo,
+    estadoStock: p.estadoStock || calcularEstadoStockMock(stock, stockMinimo),
+  };
+}
 
 /**
- * GET /api/productos?categoria=&marca=&precioMin=&precioMax=&q=&orden=&page=&size=
+ * GET /api/productos?categoria=&marca=&precioMin=&precioMax=&q=&disponibilidad=&orden=&page=&size=
  * -> { content: [], totalPages, totalElements, page, size }
  */
 export async function getProductos(params = {}) {
@@ -12,6 +38,7 @@ export async function getProductos(params = {}) {
     precioMin = '',
     precioMax = '',
     q = '',
+    disponibilidad = '',
     orden = '',
     page = 0,
     size = 8,
@@ -24,6 +51,7 @@ export async function getProductos(params = {}) {
     if (precioMin !== '' && precioMin !== null) cleanParams.precioMin = precioMin;
     if (precioMax !== '' && precioMax !== null) cleanParams.precioMax = precioMax;
     if (q) cleanParams.q = q;
+    if (disponibilidad) cleanParams.disponibilidad = disponibilidad;
     if (orden) cleanParams.orden = orden;
     cleanParams.page = page;
     cleanParams.size = size;
@@ -33,7 +61,7 @@ export async function getProductos(params = {}) {
   }
 
   await delay(220);
-  let lista = [...mockStorage.getProductos()];
+  let lista = mockStorage.getProductos().map(enrichMockProducto);
 
   // Filtro por categoría Yokai
   if (categoria) {
@@ -59,6 +87,20 @@ export async function getProductos(params = {}) {
     lista = lista.filter((p) => Number(p.precio) <= Number(precioMax));
   }
 
+  // Filtro por disponibilidad (EN_STOCK, ULTIMAS_UNIDADES, SIN_STOCK, DISPONIBLE)
+  if (disponibilidad) {
+    const dispUpper = String(disponibilidad).trim().toUpperCase();
+    if (dispUpper === 'EN_STOCK') {
+      lista = lista.filter((p) => p.stock > p.stockMinimo);
+    } else if (dispUpper === 'ULTIMAS_UNIDADES') {
+      lista = lista.filter((p) => p.stock > 0 && p.stock <= p.stockMinimo);
+    } else if (dispUpper === 'SIN_STOCK') {
+      lista = lista.filter((p) => p.stock <= 0);
+    } else if (dispUpper === 'DISPONIBLE') {
+      lista = lista.filter((p) => p.stock > 0);
+    }
+  }
+
   // Búsqueda por texto (q)
   if (q && String(q).trim() !== '') {
     const query = String(q).trim().toLowerCase();
@@ -68,6 +110,7 @@ export async function getProductos(params = {}) {
         p.descripcion.toLowerCase().includes(query) ||
         String(p.marca || '').toLowerCase().includes(query) ||
         String(p.categoria || '').toLowerCase().includes(query) ||
+        String(p.sku || '').toLowerCase().includes(query) ||
         String(p.subtituloCorto || '').toLowerCase().includes(query)
     );
   }
@@ -109,14 +152,34 @@ export async function getProductoById(id) {
   }
 
   await delay(180);
-  const productos = mockStorage.getProductos();
+  const productos = mockStorage.getProductos().map(enrichMockProducto);
   const found = productos.find((p) => Number(p.id) === Number(id));
   if (!found) {
-    const err = new Error('El componente solicitado no fue encontrado en el santuario.');
-    err.status = 404;
-    throw err;
+    throw new ApiError({
+      message: 'El componente solicitado no fue encontrado en el santuario.',
+      status: 404,
+    });
   }
-  return found;
+  return {
+    ...found,
+    imagenes: found.imagen ? [found.imagen] : [],
+  };
+}
+
+/**
+ * GET /api/admin/productos/stock-bajo (ADMIN)
+ */
+export async function getProductosStockBajoAdmin() {
+  if (!USE_MOCKS) {
+    const { data } = await apiClient.get('/api/admin/productos/stock-bajo');
+    return data;
+  }
+
+  await delay(160);
+  return mockStorage
+    .getProductos()
+    .map(enrichMockProducto)
+    .filter((p) => p.stock <= p.stockMinimo);
 }
 
 /**
@@ -131,27 +194,38 @@ export async function createProducto(payload) {
   await delay(260);
   const productos = mockStorage.getProductos();
   const nuevoId = productos.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
-  const nuevo = {
+  const stock = Math.max(0, Number(payload.stock) || 0);
+  const stockMinimo =
+    payload.stockMinimo !== undefined && payload.stockMinimo !== ''
+      ? Math.max(0, Number(payload.stockMinimo))
+      : 3;
+  const categoria = payload.categoria || 'Oni';
+  const sku =
+    payload.sku && String(payload.sku).trim()
+      ? String(payload.sku).trim().toUpperCase()
+      : `${categoria.slice(0, 3).toUpperCase()}-000${nuevoId}`;
+
+  const nuevo = enrichMockProducto({
     id: nuevoId,
+    sku,
     nombre: String(payload.nombre || '').trim(),
     descripcion: String(payload.descripcion || '').trim(),
     precio: Number(payload.precio) || 0,
-    stock: Math.max(0, Number(payload.stock) || 0),
-    imagen:
-      payload.imagen ||
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBkRGhRL2GKFiI-yK5c6SZhfFw8EjJjsBwXLzT3MIN3beGdo41DB1dBJPQeXq0ufvovEZ6ddJx9kAaUgJxEm0bE0fFW-HE4eqKOoTEem-rXbyT7mOyvQ9z4tLfoGHUd5-Sl0AxuNZDLaksXW1g5QKdW7MsD3zFRlpP7nrsdLZFWxfNwfIIKiWGFslzKYeeRPLxDsrePcNIlEeDuqoU_at5OEUi6Wm5parKQeio-W6bYSiGC9oekPWoqCA',
-    categoria: payload.categoria || 'Oni',
+    stock,
+    stockMinimo,
+    imagen: payload.imagen || DEFAULT_HERO_IMAGE_URL,
+    categoria,
     marca: String(payload.marca || 'ASUS').toUpperCase(),
     etiquetaYokai:
-      payload.etiquetaYokai || `${payload.categoria || 'Oni'} // ${payload.marca || 'HARDWARE'}`,
+      payload.etiquetaYokai || `${categoria} // ${payload.marca || 'HARDWARE'}`,
     subtituloCorto:
-      payload.subtituloCorto || 'Componente oficial certificado • Garantía Yokai Argentina',
+      payload.subtituloCorto || 'Componente oficial certificado • Garantía Oficial Argentina',
     destacado: Boolean(payload.destacado),
     especificaciones: payload.especificaciones || {
       Garantía: 'Oficial en Argentina (12 meses)',
       Estado: 'Nuevo en caja sellada',
     },
-  };
+  });
 
   productos.unshift(nuevo);
   mockStorage.saveProductos(productos);
@@ -171,20 +245,29 @@ export async function updateProducto(id, payload) {
   const productos = mockStorage.getProductos();
   const idx = productos.findIndex((p) => Number(p.id) === Number(id));
   if (idx === -1) {
-    throw new Error('Producto no encontrado.');
+    throw new ApiError({
+      message: 'Producto no encontrado.',
+      status: 404,
+    });
   }
 
-  const actualizado = {
+  const stock =
+    payload.stock !== undefined ? Math.max(0, Number(payload.stock)) : productos[idx].stock;
+  const stockMinimo =
+    payload.stockMinimo !== undefined && payload.stockMinimo !== ''
+      ? Math.max(0, Number(payload.stockMinimo))
+      : productos[idx].stockMinimo ?? 3;
+
+  const actualizado = enrichMockProducto({
     ...productos[idx],
     ...payload,
     id: productos[idx].id,
     precio:
       payload.precio !== undefined ? Number(payload.precio) : productos[idx].precio,
-    stock:
-      payload.stock !== undefined
-        ? Math.max(0, Number(payload.stock))
-        : productos[idx].stock,
-  };
+    stock,
+    stockMinimo,
+    estadoStock: calcularEstadoStockMock(stock, stockMinimo),
+  });
 
   productos[idx] = actualizado;
   mockStorage.saveProductos(productos);

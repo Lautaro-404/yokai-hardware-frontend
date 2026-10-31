@@ -4,15 +4,32 @@
 -- Motor: PostgreSQL 15+
 -- ============================================================================
 
+-- 0. ASEGURAR CATEGORÍAS Y MARCAS BASE (por orden alfabético de migraciones R__)
+INSERT INTO categoria (nombre, descripcion) VALUES
+    ('Kitsune', 'Procesadores (CPUs) de alto rendimiento inspirados en la astucia y velocidad del espíritu zorro.'),
+    ('Oni', 'Placas de video (GPUs) con potencia bruta descomunal para renderizado y gaming extremo.'),
+    ('Tengu', 'Memorias RAM de baja latencia y alta frecuencia para multitarea veloz.'),
+    ('Placas Madre', 'Motherboards con VRM reforzado y conectividad de última generación.'),
+    ('Almacenamiento', 'Unidades SSD NVMe M.2 PCIe 4.0 y 5.0 de lectura/escritura ultrarrápida.'),
+    ('Fuentes de Poder', 'Fuentes certificadas 80 Plus Gold/Platinum con soporte ATX 3.0 y 12VHPWR.'),
+    ('Gabinetes', 'Chasis con flujo de aire optimizado, paneles de vidrio templado y estética oscura Yokai.')
+ON CONFLICT (nombre) DO NOTHING;
+
+INSERT INTO marca (nombre) VALUES
+    ('ASUS'), ('AMD'), ('Intel'), ('Corsair'), ('Gigabyte'), ('Kingston'),
+    ('Seasonic'), ('Lian Li'), ('MSI'), ('Western Digital'), ('G.Skill'),
+    ('Samsung'), ('WD Black'), ('XPG'), ('Cooler Master'), ('Hyte')
+ON CONFLICT (nombre) DO NOTHING;
+
 -- 1. USUARIOS DE PRUEBA
 -- Contraseñas en claro documentadas para el equipo de desarrollo:
 -- admin@yokaihardware.com.ar      -> Admin123!
 -- cliente@yokaihardware.com.ar    -> Cliente123!
 -- abril.dev@yokaihardware.com.ar  -> Cliente123!
 INSERT INTO usuario (id, nombre, email, password, rol, direccion, activo) VALUES
-    (1, 'Administrador Yokai', 'admin@yokaihardware.com.ar', '$2a$10$vI8aWBnW3fID.ZQ4/ZO1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', 'ADMIN', 'Av. Central 100, San Rafael, Mendoza', true),
-    (2, 'Abril Cliente', 'cliente@yokaihardware.com.ar', '$2a$10$K9rZf5V0.GzM8y1c8i3i8O3O0G/Xy6u5GvG9h7K4n3n5v8K2l1m4O', 'CLIENTE', 'Av. San Martín 850, San Rafael, Mendoza (CP 5600)', true),
-    (3, 'Tatsuya Tester', 'abril.dev@yokaihardware.com.ar', '$2a$10$K9rZf5V0.GzM8y1c8i3i8O3O0G/Xy6u5GvG9h7K4n3n5v8K2l1m4O', 'CLIENTE', 'Hipólito Yrigoyen 1420, San Rafael, Mendoza', true)
+    (1, 'Administrador Yokai', 'admin@yokaihardware.com.ar', '$2a$10$6Zb78KdK8JkbV6dVKWv0fuykJDKo886Ti3/1GLk52o0eMB8yMR1mK', 'ADMIN', 'Av. Central 100, San Rafael, Mendoza', true),
+    (2, 'Abril Cliente', 'cliente@yokaihardware.com.ar', '$2a$10$ue6xY2s80RWNcZgpachAdepqDQAQ8NGIeiTmxwgtpdVwJS6KA8jCe', 'CLIENTE', 'Av. San Martín 850, San Rafael, Mendoza (CP 5600)', true),
+    (3, 'Tatsuya Tester', 'abril.dev@yokaihardware.com.ar', '$2a$10$ue6xY2s80RWNcZgpachAdepqDQAQ8NGIeiTmxwgtpdVwJS6KA8jCe', 'CLIENTE', 'Hipólito Yrigoyen 1420, San Rafael, Mendoza', true)
 ON CONFLICT (id) DO UPDATE SET
     nombre = EXCLUDED.nombre,
     password = EXCLUDED.password,

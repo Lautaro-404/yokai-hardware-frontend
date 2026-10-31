@@ -54,10 +54,6 @@ public class Producto {
     @Column(name = "stock_minimo", nullable = false)
     private Integer stockMinimo = 0;
 
-    // Columna generada por PostgreSQL calculada automáticamente
-    @Column(name = "estado_stock", insertable = false, updatable = false)
-    private String estadoStock;
-
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "categoria_id", nullable = false)
@@ -114,7 +110,7 @@ public class Producto {
     public Integer getStockMinimo() { return stockMinimo; }
     public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
 
-    public String getEstadoStock() { return estadoStock; }
+    public EstadoStock getEstadoStock() { return EstadoStock.calcular(stock, stockMinimo); }
 
     public Categoria getCategoria() { return categoria; }
     public void setCategoria(Categoria categoria) { this.categoria = categoria; }

@@ -39,6 +39,7 @@ public class SchemaIntegrityTest extends AbstractPostgresIntegrationTest {
 
     @Test
     @DisplayName("Debe rechazar usuarios con el mismo email independientemente de mayúsculas/minúsculas")
+    @Transactional
     void debeRechazarEmailDuplicadoCaseInsensitive() {
         Usuario u1 = new Usuario("Test 1", "duplicado@yokai.com", "pass123", "CLIENTE");
         usuarioRepository.saveAndFlush(u1);
@@ -51,6 +52,7 @@ public class SchemaIntegrityTest extends AbstractPostgresIntegrationTest {
 
     @Test
     @DisplayName("Debe rechazar producto con stock negativo violando CHECK (stock >= 0)")
+    @Transactional
     void debeRechazarStockNegativo() {
         Categoria cat = categoriaRepository.findAll().get(0);
         Marca marca = marcaRepository.findAll().get(0);
@@ -71,37 +73,11 @@ public class SchemaIntegrityTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    @DisplayName("Debe calcular correctamente la columna generada estado_stock")
-    @Transactional
-    void debeCalcularEstadoStockGenerado() {
-        Categoria cat = categoriaRepository.findAll().get(0);
-        Marca marca = marcaRepository.findAll().get(0);
-
-        // 1. Producto con stock normal > stockMinimo -> EN_STOCK
-        Producto prod = new Producto();
-        prod.setSku("TEST-ESTADO-STOCK");
-        prod.setNombre("Test Estado");
-        prod.setPrecio(new BigDecimal("5000.00"));
-        prod.setStock(10);
-        prod.setStockMinimo(3);
-        prod.setCategoria(cat);
-        prod.setMarca(marca);
-        prod = productoRepository.saveAndFlush(prod);
-
-        String estadoInicial = jdbcTemplate.queryForObject(
-                "SELECT estado_stock FROM producto WHERE id = ?", String.class, prod.getId());
-        assertEquals("EN_STOCK", estadoInicial);
-
-        // 2. Modificar stock a últimas unidades (<= stockMinimo)
-        jdbcTemplate.update("UPDATE producto SET stock = 2 WHERE id = ?", prod.getId());
-        String estadoUltimas = jdbcTemplate.queryForObject(
-                "SELECT estado_stock FROM producto WHERE id = ?", String.class, prod.getId());
-        assertEquals("ULTIMAS_UNIDADES", estadoUltimas);
-
-        // 3. Modificar stock a 0 -> SIN_STOCK
-        jdbcTemplate.update("UPDATE producto SET stock = 0 WHERE id = ?", prod.getId());
-        String estadoAgotado = jdbcTemplate.queryForObject(
-                "SELECT estado_stock FROM producto WHERE id = ?", String.class, prod.getId());
-        assertEquals("SIN_STOCK", estadoAgotado);
+    @DisplayName("El estado de stock no debe persistirse como columna")
+    void noDebeExistirColumnaEstadoStock() {
+        Integer columnas = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'producto' AND column_name = 'estado_stock'",
+                Integer.class);
+        assertEquals(0, columnas);
     }
 }

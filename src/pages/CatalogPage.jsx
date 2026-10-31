@@ -13,6 +13,13 @@ import { formatARS } from '../utils/formatters';
 
 const PAGE_SIZE = 8;
 
+const DISPONIBILIDAD_LABELS = {
+  EN_STOCK: 'En stock',
+  ULTIMAS_UNIDADES: 'Últimas unidades',
+  SIN_STOCK: 'Sin stock',
+  DISPONIBLE: 'Disponible',
+};
+
 export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -20,6 +27,7 @@ export default function CatalogPage() {
   const filtros = {
     categoria: searchParams.get('categoria') || '',
     marca: searchParams.get('marca') || '',
+    disponibilidad: searchParams.get('disponibilidad') || '',
     precioMin: searchParams.get('precioMin') || '',
     precioMax: searchParams.get('precioMax') || '',
     q: searchParams.get('q') || '',
@@ -63,7 +71,9 @@ export default function CatalogPage() {
       });
       setProductosData(res);
     } catch (err) {
-      setError(err?.message || 'Error al consultar el catálogo de productos.');
+      setError(
+        err?.message || 'Error al consultar el catálogo de productos.'
+      );
     } finally {
       setLoading(false);
     }
@@ -71,6 +81,7 @@ export default function CatalogPage() {
   }, [
     filtros.categoria,
     filtros.marca,
+    filtros.disponibilidad,
     filtros.precioMin,
     filtros.precioMax,
     filtros.q,
@@ -254,6 +265,20 @@ export default function CatalogPage() {
                   </button>
                 </span>
               )}
+              {filtros.disponibilidad && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high border border-pine text-tertiary font-label-sm">
+                  Disponibilidad:{' '}
+                  {DISPONIBILIDAD_LABELS[filtros.disponibilidad] ||
+                    filtros.disponibilidad}
+                  <button
+                    type="button"
+                    onClick={() => updateUrlParams({ disponibilidad: '' })}
+                    className="hover:text-on-surface-bright"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
               {(filtros.precioMin || filtros.precioMax) && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-sm">
                   Precio: {filtros.precioMin ? formatARS(filtros.precioMin) : '$0'} -{' '}
@@ -294,7 +319,7 @@ export default function CatalogPage() {
               kanji="無"
               icon="search_off"
               title="No encontramos componentes con esos filtros"
-              description="Probá ampliando el rango de precio, seleccionando otra marca o limpiando los filtros activos."
+              description="Probá ampliando el rango de precio, cambiando el filtro de disponibilidad o limpiando los filtros activos."
               actionLabel="Restablecer todos los filtros"
               onActionClick={clearAllFilters}
             />

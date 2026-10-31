@@ -5,10 +5,20 @@ import { useToast } from '../context/ToastContext';
 import CartItem from '../components/cart/CartItem';
 import OrderSummary from '../components/cart/OrderSummary';
 import EmptyState from '../components/ui/EmptyState';
+import ErrorMessage from '../components/ui/ErrorMessage';
 
 export default function CartPage() {
-  const { items, totalItems, subtotal, updateQuantity, removeFromCart, clearCart } =
-    useCart();
+  const {
+    items,
+    syncingCart,
+    cartError,
+    fetchCart,
+    totalItems,
+    subtotal,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+  } = useCart();
   const { showToast } = useToast();
 
   return (
@@ -26,7 +36,7 @@ export default function CartPage() {
             Tu Carrito de Hardware
           </h1>
           <p className="font-body-md text-body-md text-outline mt-1">
-            Revisá las unidades seleccionadas antes de proceder al despacho asegurado.
+            Revisá las unidades seleccionadas antes de proceder al checkout.
           </p>
         </div>
 
@@ -47,7 +57,18 @@ export default function CartPage() {
         )}
       </div>
 
-      {items.length === 0 ? (
+      {cartError ? (
+        <ErrorMessage message={cartError} onRetry={fetchCart} />
+      ) : syncingCart && items.length === 0 ? (
+        <div className="flex flex-col gap-space-md animate-pulse">
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              className="h-28 rounded bg-surface-container-low border border-outline-variant/50"
+            />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <EmptyState
           kanji="空"
           icon="shopping_bag"
@@ -61,7 +82,7 @@ export default function CartPage() {
           <div className="lg:col-span-8 flex flex-col gap-space-md">
             {items.map((item) => (
               <CartItem
-                key={item.producto.id}
+                key={item.id || item.producto.id}
                 item={item}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}

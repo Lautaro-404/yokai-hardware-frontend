@@ -36,8 +36,8 @@ function readOrSeed(key, seedData) {
 function writeData(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch (err) {
-    console.error('Error guardando en mockStorage:', err);
+  } catch {
+    // Ignorar error de cuota de almacenamiento local
   }
 }
 

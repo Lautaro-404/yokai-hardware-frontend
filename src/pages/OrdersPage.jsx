@@ -6,11 +6,25 @@ import EmptyState from '../components/ui/EmptyState';
 import ErrorMessage from '../components/ui/ErrorMessage';
 
 const ESTADO_BADGE = {
+  PENDIENTE_PAGO: 'bg-surface-container-high border-primary-container/60 text-primary',
+  PAGADO: 'bg-primary-container/20 border-primary text-primary-fixed',
+  EN_PREPARACION: 'bg-secondary-container/30 border-vermilion/50 text-secondary',
   PENDIENTE: 'bg-surface-container-high border-primary-container/60 text-primary',
   CONFIRMADO: 'bg-primary-container/20 border-primary text-primary-fixed',
   ENVIADO: 'bg-pine/30 border-pine text-tertiary',
   ENTREGADO: 'bg-pine/50 border-tertiary text-on-tertiary-container',
   CANCELADO: 'bg-error-container/60 border-error/60 text-error',
+};
+
+const ESTADO_LABEL = {
+  PENDIENTE_PAGO: 'Pendiente de Pago',
+  PAGADO: 'Pagado',
+  EN_PREPARACION: 'En Preparación',
+  ENVIADO: 'Enviado',
+  ENTREGADO: 'Entregado',
+  CANCELADO: 'Cancelado',
+  PENDIENTE: 'Pendiente',
+  CONFIRMADO: 'Confirmado',
 };
 
 export default function OrdersPage() {
@@ -124,7 +138,7 @@ export default function OrdersPage() {
                   <span
                     className={`px-3 py-1 rounded border font-label-sm text-label-sm uppercase tracking-wider ${badgeStyle}`}
                   >
-                    {pedido.estado}
+                    {ESTADO_LABEL[pedido.estado] || pedido.estado}
                   </span>
                 </div>
 

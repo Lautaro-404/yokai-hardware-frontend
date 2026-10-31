@@ -1,5 +1,6 @@
 package com.yokai.hardware.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,6 +31,7 @@ public class Usuario {
     @Column(name = "email", nullable = false, length = 120, unique = true)
     private String email;
 
+    @JsonIgnore
     @NotBlank
     @Size(max = 255)
     @Column(name = "password", nullable = false, length = 255)

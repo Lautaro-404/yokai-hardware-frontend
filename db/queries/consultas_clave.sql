@@ -16,7 +16,7 @@ SELECT
     p.nombre,
     p.precio,
     p.stock,
-    p.estado_stock,
+    CASE WHEN p.stock <= 0 THEN 'SIN_STOCK' WHEN p.stock <= p.stock_minimo THEN 'ULTIMAS_UNIDADES' ELSE 'EN_STOCK' END AS estado_stock,
     c.nombre AS categoria,
     m.nombre AS marca,
     p.especificaciones,
@@ -30,7 +30,7 @@ WHERE p.activo = true
   AND (:marca_id IS NULL OR p.marca_id = :marca_id)
   AND (:precio_min IS NULL OR p.precio >= :precio_min)
   AND (:precio_max IS NULL OR p.precio <= :precio_max)
-  AND (:estado_stock IS NULL OR p.estado_stock = :estado_stock)
+  AND (:estado_stock IS NULL OR (CASE WHEN p.stock <= 0 THEN 'SIN_STOCK' WHEN p.stock <= p.stock_minimo THEN 'ULTIMAS_UNIDADES' ELSE 'EN_STOCK' END) = :estado_stock)
   -- Keyset pagination condition:
   AND (:ultimo_precio IS NULL OR (p.precio > :ultimo_precio OR (p.precio = :ultimo_precio AND p.id > :ultimo_id)))
 ORDER BY p.precio ASC, p.id ASC
@@ -67,7 +67,7 @@ SELECT
     m.nombre AS marca,
     p.stock,
     p.stock_minimo,
-    p.estado_stock,
+    CASE WHEN p.stock <= 0 THEN 'SIN_STOCK' WHEN p.stock <= p.stock_minimo THEN 'ULTIMAS_UNIDADES' ELSE 'EN_STOCK' END AS estado_stock,
     p.precio
 FROM producto p
 JOIN categoria c ON p.categoria_id = c.id

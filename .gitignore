@@ -7,3 +7,12 @@ dist-ssr
 .agents
 *.zip
 *.log
+
+# Maven & Java
+target/
+*.class
+.factorypath
+.project
+.settings/
+.classpath
+

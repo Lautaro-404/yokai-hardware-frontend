@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProductoById, getProductos } from '../api/productos';
-import { formatARS, getTransferPrice, getInstallmentPrice } from '../utils/formatters';
+import { formatARS } from '../utils/formatters';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import ProductCard from '../components/product/ProductCard';
@@ -42,7 +42,9 @@ export default function ProductDetailPage() {
           .slice(0, 4)
       );
     } catch (err) {
-      setError(err?.message || 'No se pudo cargar el detalle del producto.');
+      setError(
+        err?.message || 'No se pudo cargar el detalle del producto.'
+      );
     } finally {
       setLoading(false);
     }
@@ -76,10 +78,18 @@ export default function ProductDetailPage() {
   }
 
   const stock = Number(producto.stock ?? 0);
-  const sinStock = stock <= 0;
+  const estadoStock =
+    producto.estadoStock ||
+    (stock <= 0
+      ? 'Sin stock'
+      : stock <= (producto.stockMinimo ?? 3)
+      ? 'Últimas unidades'
+      : 'En stock');
+  const sinStock = estadoStock === 'Sin stock' || stock <= 0;
+  const ultimasUnidades = estadoStock === 'Últimas unidades';
   const specsEntries = Object.entries(producto.especificaciones || {});
 
-  // Vistas de galería simuladas con encuadres sobre la imagen del producto
+  // Vistas de galería del producto
   const galleryViews = [
     { label: 'Vista Principal', scaleClass: 'scale-100' },
     { label: 'Detalle Chasis', scaleClass: 'scale-110 -rotate-2' },
@@ -176,20 +186,28 @@ export default function ProductDetailPage() {
         {/* Columna Derecha: Ficha Comercial */}
         <div className="lg:col-span-6 flex flex-col gap-space-md p-space-lg rounded bg-surface-container-low border border-outline-variant/60 shadow-xl">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="font-label-md text-label-md text-primary uppercase tracking-widest font-semibold">
-              Espíritu {producto.categoria} • {producto.marca}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-label-md text-label-md text-primary uppercase tracking-widest font-semibold">
+                Espíritu {producto.categoria} • {producto.marca}
+              </span>
+              {producto.sku && (
+                <span className="px-2 py-0.5 rounded bg-surface-container-lowest border border-outline-variant/50 font-label-sm text-outline">
+                  SKU: {producto.sku}
+                </span>
+              )}
+            </div>
+
             {sinStock ? (
               <span className="px-3 py-1 rounded bg-error-container/70 border border-error/50 text-error font-label-sm text-label-sm uppercase">
-                Agotado Temporalmente
+                Sin stock
               </span>
-            ) : stock <= 3 ? (
+            ) : ultimasUnidades ? (
               <span className="px-3 py-1 rounded bg-secondary-container/40 border border-vermilion/60 text-secondary font-label-sm text-label-sm uppercase">
-                ¡Últimas {stock} unidades en stock!
+                Últimas unidades ({stock} disponibles)
               </span>
             ) : (
               <span className="px-3 py-1 rounded bg-pine/30 border border-pine text-tertiary font-label-sm text-label-sm uppercase">
-                Stock Disponible ({stock} unidades)
+                En stock ({stock} disponibles)
               </span>
             )}
           </div>
@@ -204,40 +222,15 @@ export default function ProductDetailPage() {
             </p>
           )}
 
-          {/* Bloque de precios en ARS */}
+          {/* Bloque de precio en ARS (fuente de verdad: servidor) */}
           <div className="p-space-md rounded bg-surface-container-lowest border border-primary-container/30 flex flex-col gap-2">
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
-                Precio de Lista
+                Precio Unitario Oficial
               </span>
               <span className="font-headline-lg text-headline-lg text-on-surface-bright font-bold">
                 {formatARS(producto.precio)}
               </span>
-            </div>
-
-            <div className="pt-2 border-t border-outline-variant/40 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-secondary">
-                <span className="font-label-md text-label-md flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px]">
-                    account_balance
-                  </span>
-                  <span>Transferencia o Depósito (-10% OFF)</span>
-                </span>
-                <span className="font-headline-sm text-[18px] font-bold">
-                  {formatARS(getTransferPrice(producto.precio))}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
-                <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-primary">
-                    credit_card
-                  </span>
-                  <span>6 cuotas fijas con tarjeta bancaria</span>
-                </span>
-                <span className="text-primary font-semibold">
-                  6x {formatARS(getInstallmentPrice(producto.precio, 6))}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -285,7 +278,7 @@ export default function ProductDetailPage() {
               <span className="material-symbols-outlined text-[20px]">
                 shopping_bag
               </span>
-              <span>{sinStock ? 'Sin Stock' : 'Agregar al carrito'}</span>
+              <span>{sinStock ? 'Sin stock' : 'Agregar al carrito'}</span>
             </button>
 
             {!sinStock && (
@@ -305,7 +298,7 @@ export default function ProductDetailPage() {
               <span className="material-symbols-outlined text-primary text-[18px]">
                 local_shipping
               </span>
-              <span>Despacho en 24hs a todo el país</span>
+              <span>Despacho a todo el país</span>
             </div>
             <div className="flex items-center gap-2 p-2 rounded bg-surface-container">
               <span className="material-symbols-outlined text-primary text-[18px]">
@@ -315,9 +308,9 @@ export default function ProductDetailPage() {
             </div>
             <div className="flex items-center gap-2 p-2 rounded bg-surface-container">
               <span className="material-symbols-outlined text-primary text-[18px]">
-                receipt_long
+                inventory_2
               </span>
-              <span>Factura A o B electrónica</span>
+              <span>Caja sellada de fábrica</span>
             </div>
           </div>
         </div>

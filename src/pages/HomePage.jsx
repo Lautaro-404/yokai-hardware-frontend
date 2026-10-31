@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategorias } from '../api/categorias';
 import { getProductos } from '../api/productos';
-import { HERO_ONI_GPU_URL } from '../mocks/productosMock';
-import { formatARS, getInstallmentPrice } from '../utils/formatters';
+import { DEFAULT_HERO_IMAGE_URL } from '../utils/constants';
+import { formatARS } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import CategoryCard from '../components/product/CategoryCard';
 import ProductCard from '../components/product/ProductCard';
 import { ProductGridSkeleton } from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
 import ErrorMessage from '../components/ui/ErrorMessage';
 
 const FEATURED_TABS = [
@@ -22,6 +23,7 @@ export default function HomePage() {
   const { showToast } = useToast();
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [heroProduct, setHeroProduct] = useState(null);
   const [activeTab, setActiveTab] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,8 +41,13 @@ export default function HomePage() {
           size: 8,
         }),
       ]);
-      setCategorias(catsData);
-      setProductos(prodsData.content || []);
+      const list = prodsData.content || [];
+      setCategorias(catsData || []);
+      setProductos(list);
+      if (!selectedCategory && list.length > 0) {
+        const featured = list.find((p) => p.destacado) || list[0];
+        setHeroProduct(featured);
+      }
     } catch (err) {
       setError(err?.message || 'No se pudieron cargar los componentes destacados.');
     } finally {
@@ -74,7 +81,7 @@ export default function HomePage() {
             <div className="flex items-center gap-space-sm">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-vermilion/50 bg-surface-container-low text-secondary font-label-sm text-label-sm uppercase tracking-widest shadow-[0_0_15px_rgba(200,62,45,0.25)]">
                 <span className="w-2 h-2 rounded-full bg-vermilion animate-ping" />
-                EDICIÓN ESPECIAL ONI // TEMPORADA 2025
+                EDICIÓN ESPECIAL ONI // TEMPORADA 2026
               </span>
               <span className="font-label-sm text-label-sm text-outline tracking-widest hidden sm:inline-block">
                 鬼の覚醒 • 金箔墨絵 MK-VII
@@ -123,7 +130,7 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-[18px] text-primary group-hover:text-primary-fixed transition-colors">
                   local_fire_department
                 </span>
-                <span>Armador de PC</span>
+                <span>Explorar Procesadores</span>
               </Link>
             </div>
 
@@ -131,9 +138,9 @@ export default function HomePage() {
             <div className="pt-space-sm flex flex-wrap items-center gap-y-2 gap-x-4 text-on-surface-variant font-label-md text-label-md">
               <div className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[16px] text-primary">
-                  credit_card
+                  inventory_2
                 </span>
-                <span>12 Cuotas sin interés</span>
+                <span>Stock en tiempo real</span>
               </div>
               <span className="text-outline-variant">•</span>
               <div className="flex items-center gap-1.5">
@@ -156,13 +163,13 @@ export default function HomePage() {
           <div className="lg:col-span-6 relative flex items-center justify-center">
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-container/25 via-secondary-container/20 to-transparent rounded blur-2xl transform scale-95 -z-10" />
             <Link
-              to="/producto/9"
+              to={heroProduct ? `/producto/${heroProduct.id}` : '/catalogo'}
               className="relative w-full rounded overflow-hidden bg-surface-container-lowest border border-primary-container/40 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group block"
             >
               <img
-                alt="GeForce RTX 4080 Super Oni Edition Yokai Hardware"
+                alt={heroProduct?.nombre || 'Componente Destacado Yokai Hardware'}
                 className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                src={HERO_ONI_GPU_URL}
+                src={heroProduct?.imagen || DEFAULT_HERO_IMAGE_URL}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85" />
 
@@ -172,7 +179,7 @@ export default function HomePage() {
                   鬼
                 </span>
                 <span className="font-label-sm text-label-sm text-on-surface-bright tracking-widest uppercase">
-                  ONI GPU SERIES
+                  {heroProduct?.etiquetaYokai || 'ONI GPU SERIES'}
                 </span>
               </div>
 
@@ -180,23 +187,26 @@ export default function HomePage() {
               <div className="absolute bottom-4 left-4 right-4 p-4 rounded bg-surface-container-low/95 border border-outline-variant/80 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex flex-col">
                   <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">
-                    Lanzamiento Exclusivo
+                    {heroProduct?.estadoStock || 'Destacado del Santuario'}
                   </span>
                   <h3 className="font-headline-sm text-[17px] text-on-surface-bright font-semibold group-hover:text-primary transition-colors">
-                    GeForce RTX 4080 Super Oni Edition
+                    {heroProduct?.nombre || 'Explorar Catálogo de Hardware'}
                   </h3>
-                  <p className="font-body-sm text-body-sm text-outline">
-                    Boost 2640 MHz • 16GB GDDR6X • Triple Torii Fans
+                  <p className="font-body-sm text-body-sm text-outline line-clamp-1">
+                    {heroProduct?.subtituloCorto ||
+                      'Componentes certificados de alto rendimiento'}
                   </p>
                 </div>
-                <div className="flex sm:flex-col items-baseline sm:items-end justify-between shrink-0">
-                  <span className="font-headline-sm text-headline-sm text-secondary font-bold tracking-tight">
-                    {formatARS(1849999)}
-                  </span>
-                  <span className="font-label-sm text-label-sm text-primary uppercase font-semibold">
-                    12x {formatARS(getInstallmentPrice(1849999, 12))} s/interés
-                  </span>
-                </div>
+                {heroProduct && (
+                  <div className="flex sm:flex-col items-baseline sm:items-end justify-between shrink-0">
+                    <span className="font-headline-sm text-headline-sm text-secondary font-bold tracking-tight">
+                      {formatARS(heroProduct.precio)}
+                    </span>
+                    <span className="font-label-sm text-label-sm text-primary uppercase font-semibold">
+                      {heroProduct.marca}
+                    </span>
+                  </div>
+                )}
               </div>
             </Link>
           </div>
@@ -253,7 +263,7 @@ export default function HomePage() {
               Productos Destacados
             </h2>
             <p className="font-body-md text-body-md text-outline">
-              Stock en tiempo real y precios finales para retiro o envío inmediato.
+              Stock en tiempo real y precios oficiales provistos por el servidor.
             </p>
           </div>
 
@@ -290,6 +300,15 @@ export default function HomePage() {
           />
         ) : loading ? (
           <ProductGridSkeleton count={8} />
+        ) : productos.length === 0 ? (
+          <EmptyState
+            kanji="無"
+            icon="inventory_2"
+            title="No hay productos disponibles en esta categoría"
+            description="Seleccioná otra pestaña espiritual o explorá el catálogo completo."
+            actionLabel="Ver todo el catálogo"
+            actionTo="/catalogo"
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
             {productos.map((prod) => (
@@ -318,8 +337,8 @@ export default function HomePage() {
                   Envíos a todo el país
                 </h4>
                 <p className="font-body-sm text-body-sm text-outline leading-relaxed">
-                  Despacho asegurado por Andreani a domicilio o sucursal en 24/48hs.
-                  Embalaje reforzado antiestático especial.
+                  Despacho asegurado a domicilio o sucursal en 24/48hs con embalaje
+                  reforzado antiestático especial.
                 </p>
               </div>
             </div>
@@ -333,11 +352,11 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <h4 className="font-headline-sm text-[18px] text-on-surface-bright font-semibold">
-                  Pagá en cuotas fijas
+                  Medios de pago habilitados
                 </h4>
                 <p className="font-body-sm text-body-sm text-outline leading-relaxed">
-                  Hasta 6 cuotas fijas con todas las tarjetas de crédito bancarias o
-                  10% OFF extra por transferencia bancaria inmediata.
+                  Operá con transferencia bancaria o tarjeta de crédito con confirmación
+                  y reserva inmediata de stock.
                 </p>
               </div>
             </div>
@@ -351,11 +370,11 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col gap-1">
                 <h4 className="font-headline-sm text-[18px] text-on-surface-bright font-semibold">
-                  Garantía oficial y RMA
+                  Garantía oficial
                 </h4>
                 <p className="font-body-sm text-body-sm text-outline leading-relaxed">
-                  Garantía oficial directa de fabricante por hasta 3 años, factura
-                  legal A/B y soporte técnico especializado local en Argentina.
+                  Componentes nuevos en caja sellada de fábrica con soporte técnico
+                  local en Argentina.
                 </p>
               </div>
             </div>
@@ -379,7 +398,7 @@ export default function HomePage() {
             </h3>
             <p className="font-body-md text-body-md text-outline">
               Recibí alertas instantáneas de reposición de placas de video, drops
-              exclusivos a precio de lista y guías de optimización para overclocking.
+              exclusivos y guías de optimización.
             </p>
           </div>
 

@@ -11,6 +11,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   const redirectTo = location.state?.from?.pathname || '/';
+  const sessionNotice = location.state?.reason || '';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,11 +49,12 @@ export default function LoginPage() {
         navigate(redirectTo, { replace: true });
       }
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'No se pudo iniciar sesión. Verificá tus credenciales.';
-      setFormError(msg);
+      if (err?.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...err.fieldErrors }));
+      }
+      setFormError(
+        err?.message || 'No se pudo iniciar sesión. Verificá tus credenciales.'
+      );
     }
   };
 
@@ -96,8 +98,21 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {sessionNotice && !formError && (
+          <div
+            role="status"
+            className="mb-space-md p-3 rounded bg-surface-container-high border border-primary-container/60 text-primary font-body-sm text-body-sm flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">info</span>
+            <span>{sessionNotice}</span>
+          </div>
+        )}
+
         {formError && (
-          <div className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2">
+          <div
+            role="alert"
+            className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-[18px]">error</span>
             <span>{formError}</span>
           </div>

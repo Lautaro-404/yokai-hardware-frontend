@@ -5,9 +5,12 @@ import { useToast } from '../../context/ToastContext';
 
 export default function CartItem({ item, onUpdateQuantity, onRemove }) {
   const { showToast } = useToast();
-  const { producto, cantidad } = item;
+  const { producto, cantidad, subtotal } = item;
   const maxStock = Number(producto.stock ?? 0);
-  const lineSubtotal = Number(producto.precio || 0) * Number(cantidad || 0);
+  const lineSubtotal =
+    subtotal !== undefined
+      ? Number(subtotal)
+      : Number(producto.precio || 0) * Number(cantidad || 0);
 
   const handleDecrement = () => {
     if (cantidad <= 1) {
@@ -63,12 +66,12 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }) {
             {producto.nombre}
           </Link>
           <span className="font-body-sm text-body-sm text-outline">
-            Unitario: {formatARS(producto.precio)} • Stock máx: {maxStock} u.
+            Unitario: {formatARS(producto.precio)} • {producto.estadoStock || 'En stock'} ({maxStock} u.)
           </span>
         </div>
       </div>
 
-      {/* Controles de cantidad y subtotal */}
+      {/* Controles de cantidad y subtotal del servidor */}
       <div className="flex items-center justify-between sm:justify-end gap-space-lg w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-outline-variant/40">
         <div className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/60 rounded px-2 py-1">
           <button

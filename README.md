@@ -94,3 +94,26 @@ En la pantalla `/login` también disponés de botones de acceso rápido con 1 cl
 - `/pedidos` : *(Ruta protegida)* Historial de pedidos del usuario con su estado actual y desglose de componentes.
 - `/login` y `/registro` : Formularios de autenticación con validación de campos.
 - `/admin` : *(Ruta protegida exclusiva rol `ADMIN`)* Panel con sidebar para **Productos** (ABM), **Categorías** (ABM), **Control de Stock** (edición rápida) y **Pedidos** (cambio de estado).
+
+---
+
+## ☕ Backend (Spring Boot + PostgreSQL)
+
+### Ejecución en Local
+```bash
+# Levantar el backend con Maven Wrapper
+.\mvnw.cmd -f server\pom.xml spring-boot:run
+
+# Correr la suite de pruebas unitarias y de integración
+.\mvnw.cmd -f server\pom.xml test
+```
+
+### Documentación Swagger / OpenAPI
+Una vez levantado el servidor backend (`http://localhost:8080`), la documentación interactiva OpenAPI v3 con esquema de autenticación Bearer JWT está disponible en:
+- **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+### Colección de Postman
+La colección completa con todos los flujos de prueba (registro, login, catálogo facetado, carrito, pedidos y panel de administración con verificación de estados) se encuentra en:
+- [`/docs/yokai_hardware_api.postman_collection.json`](./docs/yokai_hardware_api.postman_collection.json)
+Para importarla en Postman: `Import` -> `File` -> seleccionar el archivo en `/docs`. Incluye tests automatizados en cada petición y variables dinámicas.

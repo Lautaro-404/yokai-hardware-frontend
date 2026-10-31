@@ -1,4 +1,4 @@
-import apiClient, { USE_MOCKS } from './client';
+import apiClient, { ApiError, USE_MOCKS } from './client';
 import { mockStorage, delay } from '../mocks/mockStorage';
 
 function generateMockJwt(usuario) {
@@ -15,7 +15,7 @@ function generateMockJwt(usuario) {
 }
 
 /**
- * POST /api/auth/login -> { token, usuario: { id, nombre, email, rol } }
+ * POST /api/auth/login -> { token, usuario: { id, nombre, email, rol, direccion } }
  */
 export async function loginUsuario({ email, password }) {
   if (!USE_MOCKS) {
@@ -31,9 +31,10 @@ export async function loginUsuario({ email, password }) {
   );
 
   if (!found) {
-    const error = new Error('Credenciales inválidas. Verificá tu correo y contraseña.');
-    error.status = 401;
-    throw error;
+    throw new ApiError({
+      message: 'Credenciales inválidas. Verificá tu correo y contraseña.',
+      status: 401,
+    });
   }
 
   const usuarioPublico = {
@@ -51,11 +52,11 @@ export async function loginUsuario({ email, password }) {
 }
 
 /**
- * POST /api/auth/registro -> { token, usuario: { id, nombre, email, rol } }
+ * POST /api/auth/register -> { token, usuario: { id, nombre, email, rol, direccion } }
  */
 export async function registrarUsuario({ nombre, email, password, direccion = '' }) {
   if (!USE_MOCKS) {
-    const { data } = await apiClient.post('/api/auth/registro', {
+    const { data } = await apiClient.post('/api/auth/register', {
       nombre,
       email,
       password,
@@ -69,9 +70,10 @@ export async function registrarUsuario({ nombre, email, password, direccion = ''
   const normalizedEmail = String(email || '').trim().toLowerCase();
 
   if (usuarios.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-    const error = new Error('Ya existe una cuenta registrada con ese correo electrónico.');
-    error.status = 409;
-    throw error;
+    throw new ApiError({
+      message: 'Ya existe una cuenta registrada con ese correo electrónico.',
+      status: 409,
+    });
   }
 
   const nuevoId = usuarios.reduce((max, u) => Math.max(max, Number(u.id) || 0), 0) + 1;

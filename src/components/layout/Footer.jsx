@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { YOKAI_LOGO_URL } from '../../mocks/productosMock';
+import { STORE_LOGO_URL } from '../../utils/constants';
 
 export default function Footer() {
   return (
@@ -14,7 +14,7 @@ export default function Footer() {
               <img
                 alt="Yokai Hardware Kitsune Logo"
                 className="h-8 w-auto object-contain drop-shadow-[0_0_6px_rgba(212,175,55,0.4)]"
-                src={YOKAI_LOGO_URL}
+                src={STORE_LOGO_URL}
               />
               <div className="flex flex-col">
                 <span className="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface-bright">
