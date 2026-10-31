@@ -15,7 +15,7 @@ services:
     runtime: docker
     plan: free
     region: oregon
-    branch: pruebas
+    branch: main
     healthCheckPath: /api/health
     dockerfilePath: ./Dockerfile
     dockerContext: .
