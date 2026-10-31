@@ -1,0 +1,52 @@
+databases:
+  - name: yokai-hardware-db
+    databaseName: yokai_hardware_db
+    user: yokai_hardware_db_user
+    plan: free
+    region: oregon
+    postgresMajorVersion: 16
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: anywhere
+
+services:
+  - type: web
+    name: yokai-hardware-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: pruebas
+    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      - key: DB_HOST
+        fromDatabase:
+          name: yokai-hardware-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: yokai-hardware-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: yokai-hardware-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: yokai-hardware-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: yokai-hardware-db
+          property: password
+      - key: DB_URL
+        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://yokai-hardware-frontend.vercel.app
