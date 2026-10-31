@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function ErrorMessage({
   title = 'Ocurrió un inconveniente en el santuario',
   message = 'No pudimos cargar la información solicitada. Por favor, intentá nuevamente.',
   onRetry = null,
 }) {
+  const [retrying, setRetrying] = useState(false);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   return (
-    <div className="rounded bg-secondary-container/25 border border-vermilion/60 p-space-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md text-on-surface">
+    <div role="alert" className="rounded bg-secondary-container/25 border border-vermilion/60 p-space-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md text-on-surface">
       <div className="flex items-start gap-space-md">
         <div className="w-10 h-10 rounded bg-secondary-container/60 border border-vermilion flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined text-secondary text-[22px]">
@@ -22,11 +33,13 @@ export default function ErrorMessage({
       </div>
       {onRetry && (
         <button
-          onClick={onRetry}
-          className="px-4 py-2 rounded bg-surface-container-low hover:bg-surface-container-high border border-primary-container/50 text-primary font-label-md text-label-md uppercase tracking-wider transition-colors shrink-0 flex items-center gap-1.5"
+          type="button"
+          onClick={handleRetry}
+          disabled={retrying}
+          className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded bg-surface-container-low hover:bg-surface-container-high border border-primary-container/50 text-primary font-label-md text-label-md uppercase tracking-wider transition-colors shrink-0 flex items-center gap-1.5"
         >
           <span className="material-symbols-outlined text-[16px]">refresh</span>
-          <span>Reintentar</span>
+          <span>{retrying ? 'Reintentando...' : 'Reintentar'}</span>
         </button>
       )}
     </div>

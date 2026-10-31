@@ -3,9 +3,6 @@ import axios from 'axios';
 export const TOKEN_STORAGE_KEY = 'yokai_jwt_token';
 export const USER_STORAGE_KEY = 'yokai_auth_user';
 
-export const USE_MOCKS =
-  String(import.meta.env.VITE_USE_MOCKS ?? 'false').toLowerCase() === 'true';
-
 export const API_BASE_URL = String(import.meta.env.VITE_API_URL ?? '')
   .trim()
   .replace(/\/+$/, '');
@@ -17,7 +14,11 @@ const DEFAULT_STATUS_MESSAGES = {
   404: 'El recurso solicitado no fue encontrado.',
   409: 'No se pudo completar la operación por un conflicto con el estado actual.',
   500: 'Ocurrió un error interno en el servidor. Intentá nuevamente en unos instantes.',
+  503: 'El servicio no está disponible por el momento. Intentá nuevamente en unos minutos.',
 };
+
+export const NETWORK_ERROR_MESSAGE =
+  'No pudimos conectarnos con el servidor. Revisá tu conexión a internet e intentá nuevamente.';
 
 /**
  * Error normalizado de la capa API con mensaje legible en español rioplatense.
@@ -78,7 +79,7 @@ export function normalizeApiError(error) {
     return new ApiError({
       message: isTimeout
         ? 'El servidor tardó demasiado en responder. Intentá nuevamente.'
-        : 'No se pudo conectar con el servidor. Verificá tu conexión o que el backend esté en ejecución.',
+        : NETWORK_ERROR_MESSAGE,
       status: 0,
       originalError: error,
     });
@@ -92,7 +93,12 @@ export function normalizeApiError(error) {
       ? data.message.trim()
       : '';
 
-  let userMessage = backendMessage || DEFAULT_STATUS_MESSAGES[status] || DEFAULT_STATUS_MESSAGES[500];
+  const isServerError = status >= 500;
+  const fallbackMessage =
+    DEFAULT_STATUS_MESSAGES[status] ||
+    (isServerError ? DEFAULT_STATUS_MESSAGES[503] : DEFAULT_STATUS_MESSAGES[500]);
+  // En errores 5xx nunca se muestra el texto del servidor (puede ser técnico).
+  let userMessage = (!isServerError && backendMessage) || fallbackMessage;
 
   // Si es 400 por validación de campos y hay detalles específicos, mostramos el detalle legible
   if (status === 400 && details.length > 0) {

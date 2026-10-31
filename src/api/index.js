@@ -2,7 +2,6 @@ import apiClient, {
   ApiError,
   normalizeApiError,
   API_BASE_URL,
-  USE_MOCKS,
   TOKEN_STORAGE_KEY,
   USER_STORAGE_KEY,
 } from './client';
@@ -20,7 +19,6 @@ export {
   ApiError,
   normalizeApiError,
   API_BASE_URL,
-  USE_MOCKS,
   TOKEN_STORAGE_KEY,
   USER_STORAGE_KEY,
   healthApi,

@@ -11,13 +11,14 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, cartBusy } = useCart();
   const { showToast } = useToast();
 
   const [producto, setProducto] = useState(null);
   const [relacionados, setRelacionados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const [cantidad, setCantidad] = useState(1);
   const [activeTab, setActiveTab] = useState('especificaciones');
   const [selectedThumb, setSelectedThumb] = useState(0);
@@ -25,25 +26,35 @@ export default function ProductDetailPage() {
   const loadProduct = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNotFound(false);
     setCantidad(1);
     setSelectedThumb(0);
     try {
       const prod = await getProductoById(id);
       setProducto(prod);
+      setRelacionados([]);
+      setLoading(false);
 
-      const relData = await getProductos({
-        categoria: prod.categoria,
-        page: 0,
-        size: 5,
-      });
-      setRelacionados(
-        (relData.content || [])
-          .filter((p) => Number(p.id) !== Number(prod.id))
-          .slice(0, 4)
-      );
+      // Los relacionados son secundarios: si fallan, el detalle sigue visible.
+      try {
+        const relData = await getProductos({
+          categoria: prod.categoria,
+          page: 0,
+          size: 5,
+        });
+        setRelacionados(
+          (relData.content || [])
+            .filter((p) => Number(p.id) !== Number(prod.id))
+            .slice(0, 4)
+        );
+      } catch {
+        setRelacionados([]);
+      }
     } catch (err) {
+      setProducto(null);
+      setNotFound(err?.status === 404);
       setError(
-        err?.message || 'No se pudo cargar el detalle del producto.'
+        err?.message || 'No pudimos cargar el detalle del producto. Intentá nuevamente.'
       );
     } finally {
       setLoading(false);
@@ -60,9 +71,9 @@ export default function ProductDetailPage() {
     return (
       <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
         <ErrorMessage
-          title="Componente no encontrado"
+          title={notFound ? 'Componente no encontrado' : 'No pudimos cargar el componente'}
           message={error || 'El producto solicitado no está disponible.'}
-          onRetry={loadProduct}
+          onRetry={notFound ? null : loadProduct}
         />
         <div className="mt-space-md">
           <Link
@@ -111,7 +122,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-space-xl">
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-2 text-outline font-label-sm text-label-sm uppercase tracking-widest mb-space-lg">
         <Link to="/" className="hover:text-primary transition-colors">
@@ -162,7 +173,8 @@ export default function ProductDetailPage() {
                 key={view.label}
                 type="button"
                 onClick={() => setSelectedThumb(idx)}
-                className={`p-2 rounded bg-surface-container-low border transition-all flex flex-col items-center gap-1 ${
+                aria-label={`Ver ${view.label}`}
+                className={`p-2 min-h-[44px] rounded bg-surface-container-low border transition-all flex flex-col items-center gap-1 ${
                   selectedThumb === idx
                     ? 'border-primary-container shadow-gold-glow'
                     : 'border-outline-variant/50 opacity-70 hover:opacity-100'
@@ -171,11 +183,11 @@ export default function ProductDetailPage() {
                 <div className="w-16 h-16 overflow-hidden flex items-center justify-center">
                   <img
                     src={producto.imagen}
-                    alt={view.label}
+                    alt={`${producto.nombre} - ${view.label}`}
                     className={`w-full h-full object-contain ${view.scaleClass}`}
                   />
                 </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">
+                <span className="font-label-sm text-label-sm text-on-surface-variant text-center">
                   {view.label}
                 </span>
               </button>
@@ -184,9 +196,9 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Columna Derecha: Ficha Comercial */}
-        <div className="lg:col-span-6 flex flex-col gap-space-md p-space-lg rounded bg-surface-container-low border border-outline-variant/60 shadow-xl">
+        <div className="lg:col-span-6 flex flex-col gap-space-md p-4 sm:p-space-lg rounded bg-surface-container-low border border-outline-variant/60 shadow-xl">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="font-label-md text-label-md text-primary uppercase tracking-widest font-semibold">
                 Espíritu {producto.categoria} • {producto.marca}
               </span>
@@ -212,7 +224,7 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          <h1 className="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface-bright leading-tight">
+          <h1 className="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface-bright leading-tight break-words">
             {producto.nombre}
           </h1>
 
@@ -245,10 +257,10 @@ export default function ProductDetailPage() {
                   type="button"
                   disabled={sinStock || cantidad <= 1}
                   onClick={() => setCantidad((q) => Math.max(1, q - 1))}
-                  className="w-8 h-8 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary disabled:opacity-40 disabled:pointer-events-none text-on-surface-bright flex items-center justify-center transition-colors"
+                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary disabled:opacity-40 disabled:pointer-events-none text-on-surface-bright flex items-center justify-center transition-colors"
                   aria-label="Disminuir cantidad"
                 >
-                  <span className="material-symbols-outlined text-[16px]">remove</span>
+                  <span className="material-symbols-outlined text-[18px]">remove</span>
                 </button>
                 <span className="w-8 text-center font-label-lg text-label-lg text-on-surface-bright">
                   {sinStock ? 0 : cantidad}
@@ -257,19 +269,19 @@ export default function ProductDetailPage() {
                   type="button"
                   disabled={sinStock || cantidad >= stock}
                   onClick={() => setCantidad((q) => Math.min(stock, q + 1))}
-                  className="w-8 h-8 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary disabled:opacity-40 disabled:pointer-events-none text-on-surface-bright flex items-center justify-center transition-colors"
+                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary disabled:opacity-40 disabled:pointer-events-none text-on-surface-bright flex items-center justify-center transition-colors"
                   aria-label="Aumentar cantidad"
                 >
-                  <span className="material-symbols-outlined text-[16px]">add</span>
+                  <span className="material-symbols-outlined text-[18px]">add</span>
                 </button>
               </div>
             </div>
 
             <button
               type="button"
-              disabled={sinStock}
+              disabled={sinStock || cartBusy}
               onClick={handleAddToCart}
-              className={`flex-1 py-3.5 px-6 rounded font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
+              className={`disabled:opacity-60 disabled:cursor-not-allowed flex-1 min-h-[48px] py-3.5 px-6 rounded font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
                 sinStock
                   ? 'bg-surface-container-high text-outline border-outline-variant/40 cursor-not-allowed'
                   : 'bg-vermilion hover:bg-vermilion-dark text-white border-secondary/30 shadow-vermilion-glow'
@@ -285,7 +297,8 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="py-3.5 px-5 rounded bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg uppercase tracking-wider transition-colors border border-primary-fixed/40"
+                disabled={cartBusy}
+                className="disabled:opacity-60 disabled:cursor-not-allowed min-h-[48px] py-3.5 px-5 rounded bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg uppercase tracking-wider transition-colors border border-primary-fixed/40"
               >
                 Comprar ahora
               </button>
@@ -318,13 +331,13 @@ export default function ProductDetailPage() {
 
       {/* Pestañas de Descripción y Especificaciones */}
       <div className="mt-space-xl rounded bg-surface-container-low border border-outline-variant/60 overflow-hidden shadow-xl">
-        <div className="flex items-center border-b border-outline-variant/50 bg-surface-container-lowest">
+        <div className="flex items-center border-b border-outline-variant/50 bg-surface-container-lowest overflow-x-auto whitespace-nowrap">
           <button
             type="button"
             onClick={() => setActiveTab('especificaciones')}
-            className={`px-6 py-4 font-label-lg text-label-lg uppercase tracking-wider transition-colors border-b-2 ${
+            className={`px-4 sm:px-6 py-3.5 sm:py-4 font-label-md sm:font-label-lg uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
               activeTab === 'especificaciones'
-                ? 'border-primary text-primary bg-surface-container-low'
+                ? 'border-primary text-primary bg-surface-container-low font-bold'
                 : 'border-transparent text-outline hover:text-on-surface-bright'
             }`}
           >
@@ -333,9 +346,9 @@ export default function ProductDetailPage() {
           <button
             type="button"
             onClick={() => setActiveTab('descripcion')}
-            className={`px-6 py-4 font-label-lg text-label-lg uppercase tracking-wider transition-colors border-b-2 ${
+            className={`px-4 sm:px-6 py-3.5 sm:py-4 font-label-md sm:font-label-lg uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
               activeTab === 'descripcion'
-                ? 'border-primary text-primary bg-surface-container-low'
+                ? 'border-primary text-primary bg-surface-container-low font-bold'
                 : 'border-transparent text-outline hover:text-on-surface-bright'
             }`}
           >

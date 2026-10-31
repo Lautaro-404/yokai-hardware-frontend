@@ -4,7 +4,6 @@ import { getCategorias } from '../api/categorias';
 import { getProductos } from '../api/productos';
 import { DEFAULT_HERO_IMAGE_URL } from '../utils/constants';
 import { formatARS } from '../utils/formatters';
-import { useToast } from '../context/ToastContext';
 import CategoryCard from '../components/product/CategoryCard';
 import ProductCard from '../components/product/ProductCard';
 import { ProductGridSkeleton } from '../components/ui/Skeleton';
@@ -20,14 +19,17 @@ const FEATURED_TABS = [
 ];
 
 export default function HomePage() {
-  const { showToast } = useToast();
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
   const [heroProduct, setHeroProduct] = useState(null);
   const [activeTab, setActiveTab] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
+
+  const retryLoad = () => {
+    const tabObj = FEATURED_TABS.find((t) => t.id === activeTab);
+    loadHomeData(tabObj?.categoria || '');
+  };
 
   const loadHomeData = useCallback(async (selectedCategory = '') => {
     setLoading(true);
@@ -60,20 +62,10 @@ export default function HomePage() {
     loadHomeData(tabObj?.categoria || '');
   }, [activeTab, loadHomeData]);
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    showToast(
-      `¡Bienvenido al santuario Yokai! Suscribimos a ${newsletterEmail.trim()} a las alertas de stock.`,
-      'success'
-    );
-    setNewsletterEmail('');
-  };
-
   return (
     <>
       {/* SECTION 1: HERO SECTION */}
-      <section className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl lg:py-16">
+      <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
           {/* Left Column: Copy & CTAs */}
           <div className="lg:col-span-6 flex flex-col gap-space-lg">
@@ -113,10 +105,10 @@ export default function HomePage() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-space-md pt-space-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-space-md pt-space-xs">
               <Link
                 to="/catalogo"
-                className="flex items-center gap-2 px-7 py-3.5 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider transition-all shadow-vermilion-glow hover:shadow-vermilion-glow-lg border border-secondary/30 group"
+                className="min-h-[48px] flex items-center justify-center gap-2 px-7 py-3.5 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider transition-all shadow-vermilion-glow hover:shadow-vermilion-glow-lg border border-secondary/30 group"
               >
                 <span>Ver catálogo</span>
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
@@ -125,7 +117,7 @@ export default function HomePage() {
               </Link>
               <Link
                 to="/catalogo?categoria=Kitsune"
-                className="flex items-center gap-2 px-6 py-3.5 rounded bg-surface-container-low hover:bg-surface-container-high text-primary hover:text-primary-fixed border border-primary-container/40 font-label-lg text-label-lg uppercase tracking-wider transition-all shadow-[0_2px_12px_rgba(0,0,0,0.5)] group"
+                className="min-h-[48px] flex items-center justify-center gap-2 px-6 py-3.5 rounded bg-surface-container-low hover:bg-surface-container-high text-primary hover:text-primary-fixed border border-primary-container/40 font-label-lg text-label-lg uppercase tracking-wider transition-all shadow-[0_2px_12px_rgba(0,0,0,0.5)] group"
               >
                 <span className="material-symbols-outlined text-[18px] text-primary group-hover:text-primary-fixed transition-colors">
                   local_fire_department
@@ -214,7 +206,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 2: CATEGORÍAS YOKAI */}
-      <section className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+      <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg">
           <div className="flex flex-col gap-space-xs">
             <div className="flex items-center gap-2">
@@ -242,15 +234,39 @@ export default function HomePage() {
         </div>
 
         {/* Category 6-Cards Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-space-md">
-          {categorias.map((cat) => (
-            <CategoryCard key={cat.id} categoria={cat} />
-          ))}
-        </div>
+        {error ? (
+          <p className="font-body-sm text-body-sm text-outline">
+            No pudimos cargar las categorías. Usá el botón Reintentar de más abajo.
+          </p>
+        ) : loading && categorias.length === 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-space-md animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="h-40 rounded bg-surface-container-low border border-outline-variant/50"
+              />
+            ))}
+          </div>
+        ) : categorias.length === 0 ? (
+          <EmptyState
+            kanji="無"
+            icon="category"
+            title="Todavía no hay categorías cargadas"
+            description="Volvé a intentarlo en unos minutos o explorá el catálogo completo."
+            actionLabel="Ver todo el catálogo"
+            actionTo="/catalogo"
+          />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-space-md">
+            {categorias.map((cat) => (
+              <CategoryCard key={cat.id} categoria={cat} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* SECTION 3: PRODUCTOS DESTACADOS */}
-      <section className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+      <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg">
           <div className="flex flex-col gap-space-xs">
             <div className="flex items-center gap-2">
@@ -276,11 +292,11 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={
+                  className={`min-h-[38px] px-3.5 py-1.5 rounded transition-colors font-label-md text-label-md ${
                     isActive
-                      ? 'px-3.5 py-1.5 rounded bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-sm border border-primary-fixed/40 transition-colors'
-                      : 'px-3.5 py-1.5 rounded bg-surface-container-low text-on-surface-variant hover:text-on-surface-bright hover:bg-surface-container-high border border-outline-variant/60 transition-colors font-label-md text-label-md'
-                  }
+                      ? 'bg-primary-container text-on-primary font-bold shadow-sm border border-primary-fixed/40'
+                      : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface-bright hover:bg-surface-container-high border border-outline-variant/60'
+                  }`}
                 >
                   {tab.label}
                 </button>
@@ -291,13 +307,7 @@ export default function HomePage() {
 
         {/* Product Grid */}
         {error ? (
-          <ErrorMessage
-            message={error}
-            onRetry={() => {
-              const tabObj = FEATURED_TABS.find((t) => t.id === activeTab);
-              loadHomeData(tabObj?.categoria || '');
-            }}
-          />
+          <ErrorMessage message={error} onRetry={retryLoad} />
         ) : loading ? (
           <ProductGridSkeleton count={8} />
         ) : productos.length === 0 ? (
@@ -319,8 +329,8 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 4: PROMO STRIP (3 BENEFITS) */}
-      <section className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
-        <div className="p-space-xl rounded bg-surface-container-low/95 border border-outline-variant/60 backdrop-blur-xl relative overflow-hidden shadow-xl">
+      <section className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl">
+        <div className="p-5 sm:p-space-xl rounded bg-surface-container-low/95 border border-outline-variant/60 backdrop-blur-xl relative overflow-hidden shadow-xl">
           <div className="absolute -right-8 -bottom-10 text-[180px] font-bold text-outline-variant/15 select-none pointer-events-none font-serif">
             神社
           </div>
@@ -382,52 +392,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 5: NEWSLETTER / COMUNIDAD YOKAI BANNER */}
-      <section className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl mb-12">
-        <div className="relative p-space-xl rounded bg-gradient-to-r from-surface-container-low via-surface-container to-surface-container-low border border-primary-container/40 overflow-hidden shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-space-xl">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-32 bg-primary-container/15 blur-3xl pointer-events-none" />
-          <div className="flex flex-col gap-space-xs text-center lg:text-left z-10 max-w-xl">
-            <div className="flex items-center justify-center lg:justify-start gap-2">
-              <span className="w-2 h-2 rounded-full bg-vermilion" />
-              <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest font-semibold">
-                COMUNIDAD &amp; ALERTAS DE STOCK
-              </span>
-            </div>
-            <h3 className="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface-bright">
-              Unite al santuario de hardware
-            </h3>
-            <p className="font-body-md text-body-md text-outline">
-              Recibí alertas instantáneas de reposición de placas de video, drops
-              exclusivos y guías de optimización.
-            </p>
-          </div>
-
-          <form
-            onSubmit={handleNewsletterSubmit}
-            className="w-full max-w-md flex flex-col sm:flex-row items-center gap-2 z-10"
-          >
-            <div className="relative w-full">
-              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">
-                mail
-              </span>
-              <input
-                value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
-                className="w-full bg-surface-container-lowest text-on-surface placeholder:text-outline text-body-sm font-body-sm pl-11 pr-4 py-3.5 rounded border border-outline-variant/60 outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all shadow-inner"
-                placeholder="Ingresá tu correo electrónico..."
-                required
-                type="email"
-              />
-            </div>
-            <button
-              className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider transition-all border border-secondary/30 shadow-vermilion-sm"
-              type="submit"
-            >
-              Suscribirme
-            </button>
-          </form>
-        </div>
-      </section>
     </>
   );
 }

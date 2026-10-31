@@ -29,15 +29,15 @@ const SIDEBAR_SECTIONS = [
 const EMPTY_PRODUCT_FORM = {
   sku: '',
   nombre: '',
-  categoria: 'Oni',
-  marca: 'ASUS',
+  categoria: '',
+  marca: '',
   precio: '',
   stock: '',
-  stockMinimo: '3',
+  stockMinimo: '',
   imagen: '',
   subtituloCorto: '',
   descripcion: '',
-  especificacionesTexto: 'Garantía: Oficial 12 meses\nOrigen: Importador Oficial Argentina',
+  especificacionesTexto: '',
 };
 
 const EMPTY_CATEGORY_FORM = {
@@ -61,6 +61,7 @@ export default function AdminPage() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [searchAdmin, setSearchAdmin] = useState('');
 
   // Estado Modal Producto
@@ -76,9 +77,11 @@ export default function AdminPage() {
   // Estado de edición rápida de stock
   const [stockDrafts, setStockDrafts] = useState({});
 
-  const loadAdminData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadAdminData = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const [prodsRes, stockBajoRes, catsRes, marcasRes, pedsRes] = await Promise.all([
         getProductos({ page: 0, size: 100 }),
@@ -100,12 +103,17 @@ export default function AdminPage() {
       });
       setStockDrafts(drafts);
     } catch (err) {
-      setError(
-        err?.message || 'Error al cargar los datos del panel de administración.'
-      );
+      const message =
+        err?.message || 'No pudimos cargar los datos del panel. Intentá nuevamente.';
+      if (silent) {
+        showToast(message, 'error');
+      } else {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -117,8 +125,8 @@ export default function AdminPage() {
     setEditingProduct(null);
     setProductForm({
       ...EMPTY_PRODUCT_FORM,
-      categoria: categorias[0]?.nombre || 'Oni',
-      marca: marcas[0]?.nombre || 'ASUS',
+      categoria: categorias[0]?.nombre || '',
+      marca: marcas[0]?.nombre || '',
     });
     setProductModalOpen(true);
   };
@@ -131,11 +139,11 @@ export default function AdminPage() {
     setProductForm({
       sku: prod.sku || '',
       nombre: prod.nombre || '',
-      categoria: prod.categoria || 'Oni',
-      marca: prod.marca || 'ASUS',
+      categoria: prod.categoria || '',
+      marca: prod.marca || '',
       precio: prod.precio ?? '',
       stock: prod.stock ?? '',
-      stockMinimo: prod.stockMinimo ?? 3,
+      stockMinimo: prod.stockMinimo ?? '',
       imagen: prod.imagen || '',
       subtituloCorto: prod.subtituloCorto || '',
       descripcion: prod.descripcion || '',
@@ -170,13 +178,15 @@ export default function AdminPage() {
       marca: productForm.marca,
       precio: Number(productForm.precio),
       stock: Math.max(0, Number(productForm.stock) || 0),
-      stockMinimo: Math.max(0, Number(productForm.stockMinimo ?? 3)),
+      stockMinimo: Math.max(0, Number(productForm.stockMinimo) || 0),
       imagen: productForm.imagen.trim(),
       subtituloCorto: productForm.subtituloCorto.trim(),
       descripcion: productForm.descripcion.trim(),
       especificaciones: parsedSpecs,
     };
 
+    if (busy) return;
+    setBusy(true);
     try {
       if (editingProduct) {
         await updateProducto(editingProduct.id, payload);
@@ -186,19 +196,26 @@ export default function AdminPage() {
         showToast(`Producto "${payload.nombre}" creado con éxito.`, 'success');
       }
       setProductModalOpen(false);
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
-      showToast(err?.message || 'Error al guardar el producto.', 'error');
+      showToast(err?.message || 'No se pudo guardar el producto. Intentá nuevamente.', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDeleteProduct = async (prod) => {
+    if (busy) return;
+    if (!window.confirm(`¿Eliminar el producto "${prod.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setBusy(true);
     try {
       await deleteProducto(prod.id);
       showToast(`Producto "${prod.nombre}" eliminado.`, 'warning');
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
-      showToast(err?.message || 'No se pudo eliminar el producto.', 'error');
+      showToast(err?.message || 'No se pudo eliminar el producto. Intentá nuevamente.', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -229,6 +246,8 @@ export default function AdminPage() {
       return;
     }
 
+    if (busy) return;
+    setBusy(true);
     try {
       if (editingCategory) {
         await updateCategoria(editingCategory.id, categoryForm);
@@ -238,39 +257,52 @@ export default function AdminPage() {
         showToast(`Categoría "${categoryForm.nombre}" creada.`, 'success');
       }
       setCategoryModalOpen(false);
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
-      showToast(err?.message || 'Error al guardar la categoría.', 'error');
+      showToast(err?.message || 'No se pudo guardar la categoría. Intentá nuevamente.', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDeleteCategory = async (cat) => {
+    if (busy) return;
+    if (!window.confirm(`¿Eliminar la categoría "${cat.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setBusy(true);
     try {
       await deleteCategoria(cat.id);
       showToast(`Categoría "${cat.nombre}" eliminada.`, 'warning');
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
-      showToast(err?.message || 'No se pudo eliminar la categoría.', 'error');
+      showToast(err?.message || 'No se pudo eliminar la categoría. Intentá nuevamente.', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
   // --- Acciones Control de Stock ---
   const handleSaveStock = async (prod, nuevoStock) => {
+    if (busy) return;
     const cleanStock = Math.max(0, Number(nuevoStock) || 0);
+    setBusy(true);
     try {
       await updateProducto(prod.id, { stock: cleanStock });
       showToast(
         `Stock de "${prod.nombre}" actualizado a ${cleanStock} u.`,
         'success'
       );
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
-      showToast(err?.message || 'Error al actualizar el stock.', 'error');
+      showToast(err?.message || 'No se pudo actualizar el stock. Intentá nuevamente.', 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
   // --- Acciones Estado de Pedidos ---
   const handleStatusChange = async (pedidoId, nuevoEstado) => {
+    if (busy) return;
+    setBusy(true);
     try {
       const updated = await updateEstadoPedido(pedidoId, nuevoEstado);
       setPedidos((prev) =>
@@ -284,12 +316,14 @@ export default function AdminPage() {
         }.`,
         'success'
       );
-      await loadAdminData();
+      await loadAdminData(true);
     } catch (err) {
       showToast(
-        err?.message || 'Error al cambiar el estado del pedido.',
+        err?.message || 'No se pudo cambiar el estado del pedido. Intentá nuevamente.',
         'error'
       );
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -307,7 +341,7 @@ export default function AdminPage() {
   const stockSectionItems = soloStockBajo ? stockBajoList : productos;
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-space-xl">
       {/* Encabezado Admin */}
       <div className="mb-space-lg pb-space-md border-b border-outline-variant/40 flex flex-col sm:flex-row sm:items-end justify-between gap-space-md">
         <div>
@@ -373,8 +407,8 @@ export default function AdminPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
         {/* Sidebar de Navegación Admin */}
-        <aside className="lg:col-span-3 rounded bg-surface-container-low border border-outline-variant/60 p-space-md flex flex-col gap-2 shadow-lg">
-          <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest px-2 pb-1">
+        <aside className="lg:col-span-3 rounded bg-surface-container-low border border-outline-variant/60 p-2 sm:p-space-md flex flex-row lg:flex-col gap-2 shadow-lg overflow-x-auto lg:overflow-visible">
+          <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest px-2 pb-1 hidden lg:block">
             Módulos de Gestión
           </span>
           {SIDEBAR_SECTIONS.map((sec) => {
@@ -384,19 +418,19 @@ export default function AdminPage() {
                 key={sec.id}
                 type="button"
                 onClick={() => setActiveSection(sec.id)}
-                className={`w-full px-3.5 py-3 rounded flex items-center justify-between transition-all ${
+                className={`min-h-[44px] whitespace-nowrap px-3.5 py-2.5 rounded flex items-center justify-between gap-3 transition-all shrink-0 lg:w-full ${
                   active
                     ? 'bg-primary-container text-on-primary font-bold shadow-md'
                     : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface-bright'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[20px]">
                     {sec.icon}
                   </span>
-                  <span className="font-label-lg text-label-lg">{sec.label}</span>
+                  <span className="font-label-md sm:font-label-lg">{sec.label}</span>
                 </div>
-                <span className="font-serif text-sm opacity-75">{sec.kanji}</span>
+                <span className="font-serif text-sm opacity-75 hidden sm:inline">{sec.kanji}</span>
               </button>
             );
           })}
@@ -406,11 +440,11 @@ export default function AdminPage() {
         <div className="lg:col-span-9">
           {loading ? (
             <div className="rounded bg-surface-container-low border border-outline-variant/50 p-space-xl animate-pulse h-96" />
-          ) : (
+          ) : error ? null : (
             <>
               {/* 1. SECCIÓN PRODUCTOS (ABM) */}
               {activeSection === 'productos' && (
-                <div className="rounded bg-surface-container-low border border-outline-variant/60 p-space-lg flex flex-col gap-space-md shadow-xl">
+                <div className="rounded bg-surface-container-low border border-outline-variant/60 p-4 sm:p-space-lg flex flex-col gap-space-md shadow-xl">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant/40">
                     <div>
                       <h2 className="font-headline-md text-headline-md text-on-surface-bright">
@@ -427,12 +461,12 @@ export default function AdminPage() {
                         value={searchAdmin}
                         onChange={(e) => setSearchAdmin(e.target.value)}
                         placeholder="Filtrar por nombre, SKU o marca..."
-                        className="bg-surface-container-lowest text-on-surface text-body-sm px-3 py-2 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
+                        className="bg-surface-container-lowest text-on-surface text-body-sm px-3 py-2 min-h-[40px] rounded border border-outline-variant/60 focus:border-primary-container outline-none"
                       />
                       <button
                         type="button"
                         onClick={openCreateProduct}
-                        className="px-4 py-2 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase tracking-wider flex items-center gap-1.5 border border-secondary/30 shadow-vermilion-sm"
+                        className="px-4 py-2 min-h-[40px] rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase tracking-wider flex items-center gap-1.5 border border-secondary/30 shadow-vermilion-sm"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           add
@@ -450,8 +484,11 @@ export default function AdminPage() {
                       description="No hay productos que coincidan con el filtro actual."
                     />
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto pb-2 overscroll-x-contain">
+                      <span className="text-outline text-xs block sm:hidden mb-2">
+                        ← Deslizá horizontalmente para ver todas las columnas →
+                      </span>
+                      <table className="w-full min-w-[720px] text-left border-collapse">
                         <thead>
                           <tr className="border-b border-outline-variant/50 font-label-sm text-label-sm text-outline uppercase tracking-wider">
                             <th className="py-3 px-2">SKU / ID</th>
@@ -486,7 +523,7 @@ export default function AdminPage() {
                                       alt={prod.nombre}
                                       className="w-10 h-10 object-contain rounded bg-surface-container-lowest p-1 shrink-0"
                                     />
-                                    <span className="text-on-surface-bright font-medium line-clamp-1 max-w-xs">
+                                    <span className="text-on-surface-bright font-medium line-clamp-1 max-w-xs break-words">
                                       {prod.nombre}
                                     </span>
                                   </div>
@@ -525,14 +562,16 @@ export default function AdminPage() {
                                     <button
                                       type="button"
                                       onClick={() => openEditProduct(prod)}
-                                      className="px-2.5 py-1 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-label-sm uppercase transition-colors"
+                                      disabled={busy}
+                                      className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 min-h-[36px] rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-label-sm uppercase transition-colors"
                                     >
                                       Editar
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteProduct(prod)}
-                                      className="px-2.5 py-1 rounded bg-secondary-container/40 hover:bg-vermilion text-secondary hover:text-white font-label-sm uppercase transition-colors"
+                                      disabled={busy}
+                                      className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 min-h-[36px] rounded bg-secondary-container/40 hover:bg-vermilion text-secondary hover:text-white font-label-sm uppercase transition-colors"
                                     >
                                       Borrar
                                     </button>
@@ -610,14 +649,16 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => openEditCategory(cat)}
-                              className="px-2.5 py-1 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-label-sm uppercase transition-colors"
+                              disabled={busy}
+                              className="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-label-sm uppercase transition-colors"
                             >
                               Editar
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteCategory(cat)}
-                              className="px-2.5 py-1 rounded bg-secondary-container/40 hover:bg-vermilion text-secondary hover:text-white font-label-sm uppercase transition-colors"
+                              disabled={busy}
+                              className="disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-1 rounded bg-secondary-container/40 hover:bg-vermilion text-secondary hover:text-white font-label-sm uppercase transition-colors"
                             >
                               Eliminar
                             </button>
@@ -741,13 +782,15 @@ export default function AdminPage() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap justify-end">
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleSaveStock(prod, Math.max(0, prod.stock - 1))
                                 }
-                                className="w-8 h-8 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-on-surface-bright flex items-center justify-center"
+                                disabled={busy}
+                                aria-label="Restar una unidad"
+                                className="disabled:opacity-50 disabled:cursor-not-allowed w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-on-surface-bright flex items-center justify-center font-bold text-lg"
                               >
                                 -
                               </button>
@@ -761,21 +804,24 @@ export default function AdminPage() {
                                     [prod.id]: e.target.value,
                                   }))
                                 }
-                                className="w-20 text-center bg-surface-container-lowest text-on-surface-bright font-label-lg py-1.5 rounded border border-outline-variant/60"
+                                className="w-16 sm:w-20 min-h-[40px] text-center bg-surface-container-lowest text-on-surface-bright font-label-lg py-1.5 rounded border border-outline-variant/60"
                               />
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleSaveStock(prod, prod.stock + 1)
                                 }
-                                className="w-8 h-8 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-on-surface-bright flex items-center justify-center"
+                                disabled={busy}
+                                aria-label="Sumar una unidad"
+                                className="disabled:opacity-50 disabled:cursor-not-allowed w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-on-surface-bright flex items-center justify-center font-bold text-lg"
                               >
                                 +
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleSaveStock(prod, currentDraft)}
-                                className="px-3 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary font-label-sm uppercase tracking-wider"
+                                disabled={busy}
+                                className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 min-h-[40px] rounded bg-primary-container hover:bg-primary text-on-primary font-label-sm uppercase tracking-wider"
                               >
                                 Guardar
                               </button>
@@ -842,7 +888,7 @@ export default function AdminPage() {
                                 </span>
                                 <select
                                   value={ped.estado}
-                                  disabled={permitidos.length === 0}
+                                  disabled={permitidos.length === 0 || busy}
                                   onChange={(e) =>
                                     handleStatusChange(ped.id, e.target.value)
                                   }
@@ -890,7 +936,7 @@ export default function AdminPage() {
       {/* MODAL CREAR / EDITAR PRODUCTO */}
       {productModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded bg-surface-container-low border border-primary-container/60 p-space-lg shadow-2xl my-8">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded bg-surface-container-low border border-primary-container/60 p-4 sm:p-space-lg shadow-2xl my-auto">
             <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/40 mb-space-md">
               <h3 className="font-headline-md text-on-surface-bright">
                 {editingProduct
@@ -900,7 +946,8 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => setProductModalOpen(false)}
-                className="text-outline hover:text-on-surface-bright"
+                aria-label="Cerrar modal de producto"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center text-outline hover:text-on-surface-bright rounded"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -1093,15 +1140,17 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setProductModalOpen(false)}
-                  className="px-4 py-2 rounded bg-surface-container-high text-on-surface-variant font-label-md uppercase"
+                  disabled={busy}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] px-4 py-2 rounded bg-surface-container-high text-on-surface-variant font-label-md uppercase"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase"
+                  disabled={busy}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] px-5 py-2 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase"
                 >
-                  Guardar Producto
+                  {busy ? 'Guardando...' : 'Guardar Producto'}
                 </button>
               </div>
             </form>
@@ -1111,8 +1160,8 @@ export default function AdminPage() {
 
       {/* MODAL CREAR / EDITAR CATEGORÍA */}
       {categoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded bg-surface-container-low border border-primary-container/60 p-space-lg shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto rounded bg-surface-container-low border border-primary-container/60 p-4 sm:p-space-lg shadow-2xl my-auto">
             <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/40 mb-space-md">
               <h3 className="font-headline-md text-on-surface-bright">
                 {editingCategory
@@ -1122,7 +1171,8 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => setCategoryModalOpen(false)}
-                className="text-outline hover:text-on-surface-bright"
+                aria-label="Cerrar modal de categoría"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center text-outline hover:text-on-surface-bright rounded"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -1214,15 +1264,17 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={() => setCategoryModalOpen(false)}
-                  className="px-4 py-2 rounded bg-surface-container-high text-on-surface-variant font-label-md uppercase"
+                  disabled={busy}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] px-4 py-2 rounded bg-surface-container-high text-on-surface-variant font-label-md uppercase"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase"
+                  disabled={busy}
+                  className="disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] px-5 py-2 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase"
                 >
-                  Guardar Categoría
+                  {busy ? 'Guardando...' : 'Guardar Categoría'}
                 </button>
               </div>
             </form>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
+import { useToast } from './ToastContext';
 import {
   getCarritoRemoto,
   addOrSyncItemCarritoRemoto,
@@ -14,6 +15,7 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const { isAuthenticated, usuario } = useAuth();
+  const { showToast } = useToast();
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem(LOCAL_CART_KEY);
@@ -24,7 +26,24 @@ export function CartProvider({ children }) {
   });
   const [serverTotals, setServerTotals] = useState(null);
   const [syncingCart, setSyncingCart] = useState(false);
+  const [pendingOps, setPendingOps] = useState(0);
   const [cartError, setCartError] = useState(null);
+  const [stockConflict, setStockConflict] = useState(null);
+
+  const reportStockConflict = useCallback((conflict) => {
+    if (!conflict) {
+      setStockConflict(null);
+      return;
+    }
+    setStockConflict({
+      message: conflict.message || 'Stock insuficiente para uno o más productos.',
+      productName: conflict.productName || '',
+    });
+  }, []);
+
+  const clearStockConflict = useCallback(() => {
+    setStockConflict(null);
+  }, []);
 
   const applyCarritoDto = useCallback((dto) => {
     if (!dto || !Array.isArray(dto.items)) return;
@@ -49,7 +68,7 @@ export function CartProvider({ children }) {
     if (!isAuthenticated || !usuario?.id) {
       setServerTotals(null);
       setCartError(null);
-      return;
+      return null;
     }
     setSyncingCart(true);
     setCartError(null);
@@ -72,18 +91,41 @@ export function CartProvider({ children }) {
           });
         }
         applyCarritoDto(latestDto);
+        return latestDto;
       } else if (remoteDto && Array.isArray(remoteDto.items)) {
         applyCarritoDto(remoteDto);
+        return remoteDto;
       }
+      return remoteDto;
     } catch (err) {
       setCartError(
         err?.message || 'No se pudo obtener el carrito desde el servidor.'
       );
+      return null;
     } finally {
       setSyncingCart(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, usuario?.id, applyCarritoDto]);
+
+  // Ejecuta una operación remota del carrito: aplica la respuesta del servidor, informa
+  // el error en español y resincroniza si algo falla.
+  const runRemote = useCallback(
+    (promise) => {
+      setPendingOps((n) => n + 1);
+      return promise
+        .then((dto) => applyCarritoDto(dto))
+        .catch((err) => {
+          showToast(
+            err?.message || 'No se pudo actualizar el carrito. Intentá nuevamente.',
+            'error'
+          );
+          return fetchCart();
+        })
+        .finally(() => setPendingOps((n) => Math.max(0, n - 1)));
+    },
+    [applyCarritoDto, fetchCart, showToast]
+  );
 
   useEffect(() => {
     if (isAuthenticated && usuario?.id) {
@@ -145,14 +187,12 @@ export function CartProvider({ children }) {
       });
 
       if (isAuthenticated && effectiveDelta > 0) {
-        addOrSyncItemCarritoRemoto({
-          productoId: producto.id,
-          cantidad: effectiveDelta,
-        })
-          .then((dto) => applyCarritoDto(dto))
-          .catch(() => {
-            fetchCart();
-          });
+        runRemote(
+          addOrSyncItemCarritoRemoto({
+            productoId: producto.id,
+            cantidad: effectiveDelta,
+          })
+        );
       }
 
       return {
@@ -162,7 +202,7 @@ export function CartProvider({ children }) {
           : `Se agregó "${producto.nombre}" al carrito.`,
       };
     },
-    [items, isAuthenticated, applyCarritoDto, fetchCart]
+    [items, isAuthenticated, runRemote]
   );
 
   /**
@@ -175,6 +215,8 @@ export function CartProvider({ children }) {
       );
       if (!targetItem) return { ok: false, message: '' };
 
+      setStockConflict(null);
+
       const maxStock = Number(targetItem.producto.stock ?? 0);
       const qty = Number(nuevaCantidad);
 
@@ -183,12 +225,12 @@ export function CartProvider({ children }) {
           prev.filter((i) => Number(i.producto.id) !== Number(targetItem.producto.id))
         );
         if (isAuthenticated && targetItem.id) {
-          removeItemCarritoRemoto({
-            itemId: targetItem.id,
-            productoId: targetItem.producto.id,
-          })
-            .then((dto) => applyCarritoDto(dto))
-            .catch(() => fetchCart());
+          runRemote(
+            removeItemCarritoRemoto({
+              itemId: targetItem.id,
+              productoId: targetItem.producto.id,
+            })
+          );
         }
         return { ok: true, message: '' };
       }
@@ -227,14 +269,12 @@ export function CartProvider({ children }) {
               reconcile: true,
             });
 
-        updatePromise
-          .then((dto) => applyCarritoDto(dto))
-          .catch(() => fetchCart());
+        runRemote(updatePromise);
       }
 
       return result;
     },
-    [items, isAuthenticated, applyCarritoDto, fetchCart]
+    [items, isAuthenticated, runRemote]
   );
 
   /**
@@ -245,39 +285,47 @@ export function CartProvider({ children }) {
       const targetItem = items.find(
         (i) => Number(i.producto.id) === Number(productoId) || Number(i.id) === Number(productoId)
       );
+      setStockConflict(null);
       setItems((prev) =>
         prev.filter((i) => Number(i.producto.id) !== Number(productoId))
       );
 
       if (isAuthenticated && targetItem) {
         if (targetItem.id) {
-          removeItemCarritoRemoto({
-            itemId: targetItem.id,
-            productoId: targetItem.producto.id,
-          })
-            .then((dto) => applyCarritoDto(dto))
-            .catch(() => fetchCart());
+          runRemote(
+            removeItemCarritoRemoto({
+              itemId: targetItem.id,
+              productoId: targetItem.producto.id,
+            })
+          );
         } else {
           fetchCart();
         }
       }
     },
-    [items, isAuthenticated, applyCarritoDto, fetchCart]
+    [items, isAuthenticated, runRemote, fetchCart]
   );
+
+  /**
+   * Vacía únicamente el estado local del carrito (por ejemplo, tras confirmar un pedido
+   * donde POST /api/pedidos ya vació el carrito en la base de datos).
+   */
+  const clearLocalCart = useCallback(() => {
+    setItems([]);
+    setServerTotals({ cantidadTotal: 0, total: 0 });
+    setStockConflict(null);
+    localStorage.removeItem(LOCAL_CART_KEY);
+  }, []);
 
   /**
    * Vacía el carrito usando DELETE /api/carrito
    */
   const clearCart = useCallback(() => {
-    setItems([]);
-    setServerTotals({ cantidadTotal: 0, total: 0 });
-    localStorage.removeItem(LOCAL_CART_KEY);
+    clearLocalCart();
     if (isAuthenticated) {
-      clearCarritoRemoto()
-        .then((dto) => applyCarritoDto(dto))
-        .catch(() => {});
+      runRemote(clearCarritoRemoto());
     }
-  }, [isAuthenticated, applyCarritoDto]);
+  }, [isAuthenticated, runRemote, clearLocalCart]);
 
   const totalItems = useMemo(() => {
     if (isAuthenticated && serverTotals !== null && items.every((i) => i.id)) {
@@ -307,7 +355,11 @@ export function CartProvider({ children }) {
       value={{
         items,
         syncingCart,
+        cartBusy: syncingCart || pendingOps > 0,
         cartError,
+        stockConflict,
+        reportStockConflict,
+        clearStockConflict,
         fetchCart,
         totalItems,
         subtotal,
@@ -315,6 +367,7 @@ export function CartProvider({ children }) {
         updateQuantity,
         removeFromCart,
         clearCart,
+        clearLocalCart,
       }}
     >
       {children}

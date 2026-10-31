@@ -2,7 +2,7 @@
 
 Frontend funcional para el e-commerce de componentes de hardware con temática Yokai (**Kinpaku & Sumi**), desarrollado a partir del sistema de diseño exportado desde Google Stitch (`/design`).
 
-Preparado para funcionar de inmediato con **datos simulados persistentes** (`VITE_USE_MOCKS=true`) y conectarse al backend en **Java + Spring Boot (JWT + PostgreSQL)** cambiando una única variable de entorno.
+Consume la API REST del backend en **Java + Spring Boot (JWT + PostgreSQL)**; la URL se configura con la variable de entorno `VITE_API_URL`. No incluye datos simulados.
 
 ---
 
@@ -46,47 +46,62 @@ Preparado para funcionar de inmediato con **datos simulados persistentes** (`VIT
 
 ## ⚙️ Variables de Entorno (`.env.example`)
 
-```env
-# URL base del backend en Java + Spring Boot
-VITE_API_URL=http://localhost:8080
+| Variable | Obligatoria | Descripción | Local | Producción |
+| --- | --- | --- | --- | --- |
+| `VITE_API_URL` | Sí | URL pública de la API REST, sin barra final | `http://localhost:8080` | `URL_DEPLOY_API` (por ejemplo `https://TU-BACKEND.ejemplo.com`) |
 
-# Si es true, el frontend utiliza los datos simulados de /src/mocks.
-# Cambiar a false para conectarse a la API real de Spring Boot.
-VITE_USE_MOCKS=true
+`VITE_API_URL` se incrusta en el bundle **al compilar**: si la cambiás en Vercel, hay que volver a desplegar. No guardes secretos en variables `VITE_*`: quedan visibles en el navegador. Las variables del backend están en [`server/.env.example`](./server/.env.example).
+
+---
+
+## 🌐 Despliegue en Vercel
+
+El archivo [`vercel.json`](./vercel.json) ya define el build (`npm run build`, salida `dist`) y el fallback a `index.html` para que las rutas internas (`/catalogo`, `/producto/3`, `/pedidos`) funcionen al recargar.
+
+**Desde el panel web:**
+1. En [vercel.com/new](https://vercel.com/new), importá el repositorio. Vercel detecta Vite.
+2. En *Settings → Environment Variables*, creá `VITE_API_URL` con la URL pública del backend (entorno *Production*).
+3. Desplegá. URL pública: `URL_DEPLOY_FRONTEND` (completar al desplegar).
+
+**Desde la terminal:**
+```bash
+npm install -g vercel
+vercel login
+vercel link
+vercel env add VITE_API_URL production   # pegá la URL pública de la API
+vercel --prod
 ```
 
+**Verificación después del deploy:**
+1. Abrí `/catalogo` y recargá con F5: no debe dar 404.
+2. En DevTools → Network, comprobá que las peticiones van a la URL de la API y que no hay errores de CORS.
+3. Probá el flujo completo: registro → catálogo → carrito → checkout → pedido en `/pedidos` y en el panel de administración.
+
+### Ajustes del backend para producción
+El backend no se modifica desde este repositorio de frontend, pero para que funcione con el frontend desplegado hay que configurar:
+
+1. **CORS:** `CORS_ALLOWED_ORIGINS=https://TU-FRONTEND.vercel.app` (varios orígenes separados por coma, con el esquema exacto y sin barra final). Las URLs de preview de Vercel cambian en cada deploy y hoy el código no admite patrones, así que habría que agregarlas una por una.
+2. **Perfil:** `SPRING_PROFILES_ACTIVE=prod`. Por defecto arranca `dev` (`show-sql` activo y Flyway `clean` habilitado).
+3. **Variables obligatorias:** `DB_URL` (con `sslmode=require`), `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres, nuevo y secreto) y `PORT` (lo inyecta el hosting).
+4. **Secreto JWT por defecto:** `application.yml` tiene un valor por defecto escrito en el repositorio. Conviene eliminarlo para que nunca se use en producción.
+5. **Flyway:** las ubicaciones (`filesystem:db/migration`, `../db/seed`) dependen de rutas del sistema de archivos. En un contenedor hay que copiar `db/` junto al JAR o pasarlas a `classpath:`, y confirmar si el seed debe correr en producción.
+6. **Build y hosting del backend:** `server/` no tiene `Dockerfile` ni `Procfile`. Render, Railway o Fly.io necesitan uno de ellos o un comando de build (`./mvnw -f server/pom.xml clean package`).
+7. **HTTPS:** la API tiene que servirse por `https://`. Si no, el navegador bloquea las peticiones del frontend por contenido mixto.
+8. **Swagger:** `/swagger-ui/**` y `/v3/api-docs/**` son públicos; valorar restringirlos en producción.
+9. **Arranque en frío:** en planes gratuitos el backend se duerme y la primera petición puede superar el timeout de 15 s del cliente.
+10. **Usuario `ADMIN`:** definir cómo se crea en producción (seed o manual) para poder probar el panel.
+
 ---
 
-## 🔄 Cómo pasar de Mocks a la API Real (Spring Boot)
+## 🔌 Conexión con la API
 
-Toda la comunicación pasa por la capa `/src/api` (`auth.js`, `productos.js`, `categorias.js`, `marcas.js`, `carrito.js`, `pedidos.js`).
-
-Para dejar de usar los datos simulados de `/src/mocks` y conectarse al backend real en Spring Boot:
-
-1. Abrí el archivo `.env` en la raíz del proyecto.
-2. Cambiá `VITE_USE_MOCKS` a `false` y verificá la URL de tu backend en `VITE_API_URL`:
-   ```env
-   VITE_API_URL=http://localhost:8080
-   VITE_USE_MOCKS=false
-   ```
-3. Reiniciá el servidor de Vite (`npm run dev`).
-
----
-
-## 🔑 Cuentas de Prueba (Modo `VITE_USE_MOCKS=true`)
-
-En la pantalla `/login` también disponés de botones de acceso rápido con 1 clic:
-
-| Rol | Email | Contraseña | Permisos |
-| :--- | :--- | :--- | :--- |
-| **CLIENTE** | `cliente@yokaihardware.com.ar` | `cliente123` | Carrito sincronizado, Checkout y Mis Pedidos (`/pedidos`) |
-| **ADMIN** | `admin@yokaihardware.com.ar` | `admin123` | Todo lo anterior + Panel de Administración (`/admin`) |
+Toda la comunicación pasa por la capa `/src/api` (`auth.js`, `productos.js`, `categorias.js`, `marcas.js`, `carrito.js`, `pedidos.js`, `admin.js`). Ante un error del servidor se muestra un mensaje en español con opción de reintento, y si falla la conexión aparece un aviso general sin bloquear la navegación.
 
 ---
 
 ## 🗺️ Pantallas y Rutas
 
-- `/` : **Inicio** (Hero *Oni Edition*, 6 Categorías Yokai, Productos Destacados con filtro rápido, Beneficios y Newsletter).
+- `/` : **Inicio** (Hero *Oni Edition*, 6 Categorías Yokai, Productos Destacados con filtro rápido, Beneficios).
 - `/catalogo` : **Catálogo completo** con búsqueda por texto, filtros por categoría Yokai, marca y rango de precio en ARS, ordenamiento y paginación sincronizados con la URL (`query params`).
 - `/producto/:id` : **Detalle de producto** con galería de vistas, indicador de stock, selector de cantidad validado contra stock, botón *Agregar al carrito*, pestañas de *Especificaciones Técnicas* y *Descripción*, y productos relacionados.
 - `/carrito` : **Carrito de compras** persistente en `localStorage` (y sincronizado al iniciar sesión), ajuste de cantidades con límite de stock y resumen financiero.

@@ -18,7 +18,7 @@ function decodeJwtPayload(token) {
 
 /**
  * Un token vigente es un JWT legible que no superó su claim "exp" (en segundos).
- * Si el token no trae "exp" (modo simulado) se considera vigente.
+ * Si el token no trae "exp" se considera vigente.
  */
 export function isTokenVigente(token) {
   if (!token) return false;

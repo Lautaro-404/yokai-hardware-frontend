@@ -5,7 +5,7 @@ import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductCard({ producto }) {
-  const { addToCart } = useCart();
+  const { addToCart, cartBusy } = useCart();
   const { showToast } = useToast();
 
   const stock = Number(producto.stock ?? 0);
@@ -102,9 +102,9 @@ export default function ProductCard({ producto }) {
 
         <button
           type="button"
-          disabled={sinStock}
+          disabled={sinStock || cartBusy}
           onClick={handleAdd}
-          className={`w-full mt-2 py-2.5 px-4 rounded font-label-md text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
+          className={`disabled:opacity-60 disabled:cursor-not-allowed w-full mt-2 min-h-[44px] py-2.5 px-4 rounded font-label-md text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
             sinStock
               ? 'bg-surface-container-high text-outline border-outline-variant/40 cursor-not-allowed'
               : 'bg-vermilion hover:bg-vermilion-dark text-white border-secondary/30 shadow-vermilion-sm'

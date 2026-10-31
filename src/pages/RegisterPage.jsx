@@ -66,8 +66,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
-      <div className="w-full max-w-lg p-space-xl rounded bg-surface-container-low border border-primary-container/40 shadow-2xl relative overflow-hidden">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
+      <div className="w-full max-w-lg p-5 sm:p-space-xl rounded bg-surface-container-low border border-primary-container/40 shadow-2xl relative overflow-hidden">
         <span className="pointer-events-none select-none absolute -right-4 -top-6 font-serif text-[130px] text-outline-variant/15 leading-none">
           契
         </span>
@@ -210,7 +210,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loadingAuth}
-            className="w-full mt-2 py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider transition-all border border-secondary/30 shadow-vermilion-glow flex items-center justify-center gap-2"
+            className="w-full min-h-[48px] mt-2 py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider transition-all border border-secondary/30 shadow-vermilion-glow flex items-center justify-center gap-2"
           >
             <span>{loadingAuth ? 'Creando cuenta...' : 'Registrarme'}</span>
             <span className="material-symbols-outlined text-[18px]">person_add</span>

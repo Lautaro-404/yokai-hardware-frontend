@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import CartItem from '../components/cart/CartItem';
@@ -8,10 +8,14 @@ import EmptyState from '../components/ui/EmptyState';
 import ErrorMessage from '../components/ui/ErrorMessage';
 
 export default function CartPage() {
+  const location = useLocation();
   const {
     items,
     syncingCart,
+    cartBusy,
     cartError,
+    stockConflict,
+    clearStockConflict,
     fetchCart,
     totalItems,
     subtotal,
@@ -21,8 +25,23 @@ export default function CartPage() {
   } = useCart();
   const { showToast } = useToast();
 
+  const activeConflict = stockConflict || location.state?.stockConflict || null;
+
+  const isItemConflicting = (item) => {
+    if (!activeConflict?.productName) return false;
+    const conflictName = String(activeConflict.productName).trim().toLowerCase();
+    const itemName = String(item?.producto?.nombre || '').trim().toLowerCase();
+    return Boolean(
+      conflictName &&
+        itemName &&
+        (itemName === conflictName ||
+          itemName.includes(conflictName) ||
+          conflictName.includes(itemName))
+    );
+  };
+
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-space-xl">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-space-md mb-space-lg pb-space-md border-b border-outline-variant/40">
         <div>
           <div className="flex items-center gap-2 text-outline font-label-sm text-label-sm uppercase tracking-widest mb-2">
@@ -47,7 +66,8 @@ export default function CartPage() {
               clearCart();
               showToast('Se vació el carrito de compras.', 'warning');
             }}
-            className="px-4 py-2 rounded bg-surface-container-low hover:bg-secondary-container/40 border border-outline-variant/60 hover:border-vermilion text-outline hover:text-secondary font-label-md text-label-md uppercase tracking-wider flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+            disabled={cartBusy}
+            className="disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 min-h-[44px] rounded bg-surface-container-low hover:bg-secondary-container/40 border border-outline-variant/60 hover:border-vermilion text-outline hover:text-secondary font-label-md text-label-md uppercase tracking-wider flex items-center gap-1.5 transition-colors self-start sm:self-auto"
           >
             <span className="material-symbols-outlined text-[16px]">
               remove_shopping_cart
@@ -56,6 +76,42 @@ export default function CartPage() {
           </button>
         )}
       </div>
+
+      {activeConflict && (
+        <div
+          role="alert"
+          className="mb-space-lg p-space-md rounded bg-secondary-container/30 border border-vermilion text-on-surface-bright flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-md"
+        >
+          <div className="flex items-start gap-3">
+            <span className="material-symbols-outlined text-secondary text-[24px] shrink-0 mt-0.5">
+              production_quantity_limits
+            </span>
+            <div className="flex flex-col gap-1">
+              <span className="font-headline-sm text-[16px] text-secondary font-bold">
+                {activeConflict.productName
+                  ? `Stock insuficiente para "${activeConflict.productName}"`
+                  : 'No se pudo confirmar el pedido por falta de stock'}
+              </span>
+              <p className="font-body-sm text-body-sm text-on-surface">
+                {activeConflict.message}
+              </p>
+              <span className="font-label-sm text-label-sm text-outline">
+                Ajustá las unidades en tu carrito para continuar. Tus datos de envío en el checkout fueron conservados.
+              </span>
+            </div>
+          </div>
+
+          {stockConflict && (
+            <button
+              type="button"
+              onClick={clearStockConflict}
+              className="px-3 py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/60 text-outline hover:text-on-surface-bright font-label-sm uppercase tracking-wider shrink-0 self-end sm:self-center"
+            >
+              Entendido
+            </button>
+          )}
+        </div>
+      )}
 
       {cartError ? (
         <ErrorMessage message={cartError} onRetry={fetchCart} />
@@ -86,6 +142,8 @@ export default function CartPage() {
                 item={item}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}
+                isConflicting={isItemConflicting(item)}
+                disabled={cartBusy}
               />
             ))}
 
@@ -108,6 +166,7 @@ export default function CartPage() {
               subtotal={subtotal}
               ctaLabel="Finalizar Compra"
               ctaTo="/checkout"
+              busy={cartBusy}
             />
           </div>
         </div>

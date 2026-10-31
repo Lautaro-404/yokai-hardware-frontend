@@ -41,9 +41,9 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-surface/95 backdrop-blur-xl border-b border-outline-variant/40 shadow-header">
-      <div className="h-20 w-full max-w-[1440px] mx-auto px-gutter flex items-center justify-between gap-space-lg">
+      <div className="h-20 w-full max-w-[1440px] mx-auto px-4 sm:px-gutter flex items-center justify-between gap-2 sm:gap-space-lg">
         {/* Brand Logo */}
-        <div className="flex items-center gap-space-md shrink-0">
+        <div className="flex items-center gap-2 sm:gap-space-md shrink-0">
           <Link className="flex items-center gap-space-sm group" to="/">
             <img
               alt="Yokai Hardware Kitsune Logo"
@@ -59,7 +59,7 @@ export default function Header() {
                   Hardware
                 </span>
               </div>
-              <span className="font-label-sm text-label-sm text-outline tracking-widest">
+              <span className="font-label-sm text-label-sm text-outline tracking-widest hidden sm:block">
                 妖怪 • KINPAKU &amp; SUMI HARDWARE
               </span>
             </div>
@@ -189,10 +189,11 @@ export default function Header() {
           <div className="h-6 w-px bg-outline-variant/60 hidden lg:block" />
 
           {/* Cart & User Controls */}
-          <div className="flex items-center gap-space-md">
+          <div className="flex items-center gap-2 sm:gap-space-md">
             <Link
               to="/carrito"
-              className="flex items-center gap-space-sm bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/50 px-space-md py-2 rounded transition-all group"
+              aria-label={`Carrito de compras, ${totalItems} productos`}
+              className="flex items-center gap-1.5 sm:gap-space-sm bg-surface-container-low hover:bg-surface-container-high border border-outline-variant/50 px-2.5 sm:px-space-md py-2 min-h-[44px] min-w-[44px] rounded transition-all group"
             >
               <div className="relative flex items-center">
                 <span className="material-symbols-outlined text-primary group-hover:text-primary-fixed transition-colors text-[24px]">
@@ -216,8 +217,9 @@ export default function Header() {
               <div className="hidden sm:flex items-center gap-2">
                 <Link
                   to={isAdmin ? '/admin' : '/pedidos'}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-surface-container-low border border-primary-container/40 hover:border-primary transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-1.5 min-h-[44px] rounded bg-surface-container-low border border-primary-container/40 hover:border-primary transition-colors"
                   title={`Sesión iniciada como ${usuario.nombre} (${usuario.rol})`}
+                  aria-label={`Perfil de ${usuario.nombre}`}
                 >
                   <div className="w-7 h-7 rounded bg-primary-container flex items-center justify-center shadow-md border border-primary-fixed/40">
                     <span className="material-symbols-outlined text-on-primary text-[17px]">
@@ -237,7 +239,7 @@ export default function Header() {
                   onClick={handleLogout}
                   title="Cerrar sesión"
                   aria-label="Cerrar sesión"
-                  className="w-9 h-9 rounded bg-surface-container-low hover:bg-secondary-container/40 border border-outline-variant/50 hover:border-vermilion text-outline hover:text-secondary flex items-center justify-center transition-colors"
+                  className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-low hover:bg-secondary-container/40 border border-outline-variant/50 hover:border-vermilion text-outline hover:text-secondary flex items-center justify-center transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
                 </button>
@@ -246,7 +248,8 @@ export default function Header() {
               <Link
                 to="/login"
                 title="Iniciar sesión"
-                className="w-9 h-9 rounded bg-primary-container hover:bg-primary flex items-center justify-center shadow-md border border-primary-fixed/40 transition-colors"
+                aria-label="Iniciar sesión"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-primary-container hover:bg-primary flex items-center justify-center shadow-md border border-primary-fixed/40 transition-colors"
               >
                 <span className="material-symbols-outlined text-on-primary text-[18px]">
                   person
@@ -258,10 +261,10 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="lg:hidden w-9 h-9 rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-on-surface-bright"
-              aria-label="Abrir menú"
+              className="lg:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-on-surface-bright hover:bg-surface-container-high transition-colors"
+              aria-label={mobileMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
             >
-              <span className="material-symbols-outlined text-[22px]">
+              <span className="material-symbols-outlined text-[24px]">
                 {mobileMenuOpen ? 'close' : 'menu'}
               </span>
             </button>
@@ -271,7 +274,7 @@ export default function Header() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-surface-container-lowest/98 border-b border-outline-variant/60 px-gutter py-space-md flex flex-col gap-space-md backdrop-blur-xl">
+        <div className="lg:hidden bg-surface-container-lowest/98 border-b border-outline-variant/60 px-4 sm:px-gutter py-space-md flex flex-col gap-space-md backdrop-blur-xl max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain shadow-2xl">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px]">
               search
@@ -279,7 +282,7 @@ export default function Header() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container-low text-on-surface placeholder:text-outline text-body-sm font-body-sm pl-11 pr-4 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
+              className="w-full min-h-[44px] bg-surface-container-low text-on-surface placeholder:text-outline text-body-sm font-body-sm pl-11 pr-4 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
               placeholder="Buscá procesadores, placas de video..."
               type="text"
             />
@@ -288,19 +291,19 @@ export default function Header() {
           <nav className="flex flex-col gap-1">
             <Link
               to="/"
-              className="px-3 py-2 rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
+              className="px-3 py-3 min-h-[44px] flex items-center rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
             >
               Inicio
             </Link>
             <Link
               to="/catalogo"
-              className="px-3 py-2 rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
+              className="px-3 py-3 min-h-[44px] flex items-center rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
             >
               Catálogo Completo
             </Link>
             <Link
               to="/catalogo?categoria=Oni"
-              className="px-3 py-2 rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright flex items-center justify-between"
+              className="px-3 py-3 min-h-[44px] rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright flex items-center justify-between"
             >
               <span>Ofertas Oni Edition</span>
               <span className="bg-vermilion text-white font-label-sm text-label-sm px-1.5 py-0.5 rounded uppercase">
@@ -311,14 +314,14 @@ export default function Header() {
               <>
                 <Link
                   to="/pedidos"
-                  className="px-3 py-2 rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
+                  className="px-3 py-3 min-h-[44px] flex items-center rounded font-label-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface-bright"
                 >
                   Mis Pedidos
                 </Link>
                 {isAdmin && (
                   <Link
                     to="/admin"
-                    className="px-3 py-2 rounded font-label-lg text-primary hover:bg-surface-container-low flex items-center gap-2"
+                    className="px-3 py-3 min-h-[44px] rounded font-label-lg text-primary hover:bg-surface-container-low flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       shield_person
@@ -328,7 +331,7 @@ export default function Header() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="mt-2 px-3 py-2 rounded bg-secondary-container/30 border border-vermilion/40 text-secondary font-label-lg text-left flex items-center gap-2"
+                  className="mt-2 px-3 py-3 min-h-[44px] rounded bg-secondary-container/30 border border-vermilion/40 text-secondary font-label-lg text-left flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
                   <span>Cerrar sesión ({usuario.nombre})</span>
@@ -338,13 +341,13 @@ export default function Header() {
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Link
                   to="/login"
-                  className="py-2.5 rounded bg-surface-container-low border border-primary-container/50 text-primary text-center font-label-lg uppercase"
+                  className="py-3 min-h-[44px] rounded bg-surface-container-low border border-primary-container/50 text-primary text-center font-label-lg uppercase flex items-center justify-center"
                 >
                   Ingresar
                 </Link>
                 <Link
                   to="/registro"
-                  className="py-2.5 rounded bg-vermilion text-white text-center font-label-lg uppercase"
+                  className="py-3 min-h-[44px] rounded bg-vermilion text-white text-center font-label-lg uppercase flex items-center justify-center"
                 >
                   Crear Cuenta
                 </Link>

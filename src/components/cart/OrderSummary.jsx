@@ -9,6 +9,7 @@ export default function OrderSummary({
   ctaTo = '/checkout',
   onSubmitOrder = null,
   submitting = false,
+  busy = false,
 }) {
   return (
     <div className="p-space-lg rounded bg-surface-container-low border border-primary-container/40 flex flex-col gap-space-md shadow-xl sticky top-24">
@@ -46,7 +47,7 @@ export default function OrderSummary({
           type="submit"
           disabled={submitting || totalItems === 0}
           onClick={onSubmitOrder}
-          className="w-full py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
+          className="w-full min-h-[48px] py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
         >
           <span>{submitting ? 'Procesando pedido...' : ctaLabel}</span>
           <span className="material-symbols-outlined text-[18px]">
@@ -56,7 +57,11 @@ export default function OrderSummary({
       ) : (
         <Link
           to={ctaTo}
-          className="w-full py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
+          aria-disabled={busy}
+          onClick={(event) => {
+            if (busy) event.preventDefault();
+          }}
+          className={`${busy ? 'opacity-50 pointer-events-none' : ''} w-full min-h-[48px] py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow`}
         >
           <span>{ctaLabel}</span>
           <span className="material-symbols-outlined text-[18px]">

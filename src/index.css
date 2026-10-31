@@ -7,6 +7,8 @@
   body {
     margin: 0;
     padding: 0;
+    width: 100%;
+    overflow-x: hidden;
     background-color: #151310;
     color: #e8e1dc;
     font-family: 'Space Grotesk', sans-serif;
@@ -14,6 +16,12 @@
 
   body {
     overscroll-behavior: none;
+  }
+
+  /* Foco del teclado siempre visible con color dorado Kinpaku para accesibilidad WCAG */
+  :focus-visible {
+    outline: 2px solid #f2ca50 !important;
+    outline-offset: 2px !important;
   }
 }
 
