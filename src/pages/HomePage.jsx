@@ -152,21 +152,21 @@ export default function HomePage() {
           </div>
 
           {/* Right Column: Visual Showcase */}
-          <div className="lg:col-span-6 relative flex items-center justify-center">
+          <div className="lg:col-span-6 min-w-0 relative flex items-center justify-center">
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-container/25 via-secondary-container/20 to-transparent rounded blur-2xl transform scale-95 -z-10" />
             <Link
               to={heroProduct ? `/producto/${heroProduct.id}` : '/catalogo'}
-              className="relative w-full rounded overflow-hidden bg-surface-container-lowest border border-primary-container/40 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group block"
+              className="relative w-full min-h-[260px] sm:min-h-[340px] rounded overflow-hidden bg-surface-container-lowest border border-primary-container/40 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group block"
             >
               <img
                 alt={heroProduct?.nombre || 'Componente Destacado Yokai Hardware'}
-                className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                className="w-full h-full min-h-[260px] sm:min-h-[340px] object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 src={heroProduct?.imagen || DEFAULT_HERO_IMAGE_URL}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent opacity-85" />
 
               {/* Top-Left Kanji Badge */}
-              <div className="absolute top-4 left-4 px-3 py-1 rounded bg-surface-container-lowest/90 border border-primary-container/50 backdrop-blur-md flex items-center gap-2 shadow-lg">
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 px-2.5 sm:px-3 py-1 rounded bg-surface-container-lowest/90 border border-primary-container/50 backdrop-blur-md flex items-center gap-2 shadow-lg">
                 <span className="font-headline-sm text-headline-sm text-secondary leading-none font-serif">
                   鬼
                 </span>
@@ -176,7 +176,7 @@ export default function HomePage() {
               </div>
 
               {/* Bottom Floating Hardware Spec Overlay Card */}
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded bg-surface-container-low/95 border border-outline-variant/80 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 p-3 sm:p-4 rounded bg-surface-container-low/95 border border-outline-variant/80 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                 <div className="flex flex-col">
                   <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">
                     {heroProduct?.estadoStock || 'Destacado del Santuario'}
@@ -284,7 +284,7 @@ export default function HomePage() {
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center flex-wrap gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap pb-1 max-w-full touch-pan-x">
             {FEATURED_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -292,7 +292,7 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`min-h-[38px] px-3.5 py-1.5 rounded transition-colors font-label-md text-label-md ${
+                  className={`shrink-0 whitespace-nowrap min-h-[38px] px-3.5 py-1.5 rounded transition-colors font-label-md text-label-md ${
                     isActive
                       ? 'bg-primary-container text-on-primary font-bold shadow-sm border border-primary-fixed/40'
                       : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface-bright hover:bg-surface-container-high border border-outline-variant/60'

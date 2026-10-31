@@ -443,8 +443,8 @@ export default function CheckoutPage() {
         className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start"
       >
         {/* Columna Izquierda: Datos de Envío y Pago */}
-        <div className="lg:col-span-7 flex flex-col gap-space-lg">
-          <div className="p-space-lg rounded bg-surface-container-low border border-outline-variant/60 flex flex-col gap-space-md shadow-lg">
+        <div className="lg:col-span-7 min-w-0 flex flex-col gap-space-lg">
+          <div className="p-4 sm:p-space-lg rounded bg-surface-container-low border border-outline-variant/60 flex flex-col gap-space-md shadow-lg">
             <h2 className="font-headline-sm text-headline-sm text-on-surface-bright flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[22px]">
                 local_shipping
@@ -584,7 +584,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Método de Pago */}
-          <div className="p-space-lg rounded bg-surface-container-low border border-outline-variant/60 flex flex-col gap-space-md shadow-lg">
+          <div className="p-4 sm:p-space-lg rounded bg-surface-container-low border border-outline-variant/60 flex flex-col gap-space-md shadow-lg">
             <h2 className="font-headline-sm text-headline-sm text-on-surface-bright flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[22px]">
                 payments
@@ -657,7 +657,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Columna Derecha: Detalle de Ítems y Confirmación */}
-        <div className="lg:col-span-5 flex flex-col gap-space-md">
+        <div className="lg:col-span-5 min-w-0 flex flex-col gap-space-md">
           <div className="p-4 sm:p-space-lg rounded bg-surface-container-low border border-primary-container/40 flex flex-col gap-space-md shadow-xl">
             <h3 className="font-headline-sm text-headline-sm text-on-surface-bright pb-space-sm border-b border-outline-variant/40">
               Componentes en tu Pedido ({totalItems})

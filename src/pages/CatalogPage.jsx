@@ -226,7 +226,7 @@ export default function CatalogPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
         {/* Sidebar de Filtros */}
         <div
-          className={`lg:col-span-3 ${
+          className={`lg:col-span-3 min-w-0 ${
             mobileFiltersOpen ? 'block' : 'hidden lg:block'
           }`}
         >
@@ -250,7 +250,7 @@ export default function CatalogPage() {
         </div>
 
         {/* Contenido Principal del Catálogo */}
-        <div className="lg:col-span-9 flex flex-col gap-space-md">
+        <div className="lg:col-span-9 min-w-0 flex flex-col gap-space-md">
           {/* Barra de estado de resultados y chips de filtros activos */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded bg-surface-container-low border border-outline-variant/50">
             <span className="font-body-sm text-body-sm text-on-surface-variant">

@@ -407,7 +407,7 @@ export default function AdminPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
         {/* Sidebar de Navegación Admin */}
-        <aside className="lg:col-span-3 rounded bg-surface-container-low border border-outline-variant/60 p-2 sm:p-space-md flex flex-row lg:flex-col gap-2 shadow-lg overflow-x-auto lg:overflow-visible">
+        <aside className="lg:col-span-3 min-w-0 rounded bg-surface-container-low border border-outline-variant/60 p-2 sm:p-space-md flex flex-row lg:flex-col gap-2 shadow-lg overflow-x-auto lg:overflow-visible touch-pan-x">
           <span className="font-label-sm text-label-sm text-primary uppercase tracking-widest px-2 pb-1 hidden lg:block">
             Módulos de Gestión
           </span>
@@ -437,14 +437,14 @@ export default function AdminPage() {
         </aside>
 
         {/* Área de Contenido Admin */}
-        <div className="lg:col-span-9">
+        <div className="lg:col-span-9 min-w-0">
           {loading ? (
             <div className="rounded bg-surface-container-low border border-outline-variant/50 p-space-xl animate-pulse h-96" />
           ) : error ? null : (
             <>
               {/* 1. SECCIÓN PRODUCTOS (ABM) */}
               {activeSection === 'productos' && (
-                <div className="rounded bg-surface-container-low border border-outline-variant/60 p-4 sm:p-space-lg flex flex-col gap-space-md shadow-xl">
+                <div className="rounded bg-surface-container-low border border-outline-variant/60 p-4 sm:p-space-lg flex flex-col gap-space-md shadow-xl min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant/40">
                     <div>
                       <h2 className="font-headline-md text-headline-md text-on-surface-bright">
@@ -455,18 +455,18 @@ export default function AdminPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       <input
                         type="text"
                         value={searchAdmin}
                         onChange={(e) => setSearchAdmin(e.target.value)}
                         placeholder="Filtrar por nombre, SKU o marca..."
-                        className="bg-surface-container-lowest text-on-surface text-body-sm px-3 py-2 min-h-[40px] rounded border border-outline-variant/60 focus:border-primary-container outline-none"
+                        className="w-full sm:w-auto bg-surface-container-lowest text-on-surface text-body-sm px-3 py-2 min-h-[40px] rounded border border-outline-variant/60 focus:border-primary-container outline-none"
                       />
                       <button
                         type="button"
                         onClick={openCreateProduct}
-                        className="px-4 py-2 min-h-[40px] rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase tracking-wider flex items-center gap-1.5 border border-secondary/30 shadow-vermilion-sm"
+                        className="px-4 py-2 min-h-[40px] rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-md uppercase tracking-wider flex items-center justify-center gap-1.5 border border-secondary/30 shadow-vermilion-sm"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           add
@@ -484,7 +484,7 @@ export default function AdminPage() {
                       description="No hay productos que coincidan con el filtro actual."
                     />
                   ) : (
-                    <div className="overflow-x-auto pb-2 overscroll-x-contain">
+                    <div className="w-full overflow-x-auto pb-2 overscroll-x-contain touch-pan-x">
                       <span className="text-outline text-xs block sm:hidden mb-2">
                         ← Deslizá horizontalmente para ver todas las columnas →
                       </span>
