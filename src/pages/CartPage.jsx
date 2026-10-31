@@ -135,7 +135,7 @@ export default function CartPage() {
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-          <div className="lg:col-span-8 flex flex-col gap-space-md">
+          <div className="lg:col-span-8 min-w-0 flex flex-col gap-space-md">
             {items.map((item) => (
               <CartItem
                 key={item.id || item.producto.id}
@@ -160,7 +160,7 @@ export default function CartPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 min-w-0">
             <OrderSummary
               totalItems={totalItems}
               subtotal={subtotal}

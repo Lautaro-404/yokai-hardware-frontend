@@ -3,19 +3,27 @@
 @tailwind utilities;
 
 @layer base {
-  html,
+  html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background-color: #151310;
+    color: #e8e1dc;
+    font-family: 'Space Grotesk', sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     margin: 0;
     padding: 0;
     width: 100%;
-    overflow-x: hidden;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background-color: #151310;
     color: #e8e1dc;
     font-family: 'Space Grotesk', sans-serif;
-  }
-
-  body {
-    overscroll-behavior: none;
   }
 
   /* Foco del teclado siempre visible con color dorado Kinpaku para accesibilidad WCAG */

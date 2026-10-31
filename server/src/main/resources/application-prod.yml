@@ -24,13 +24,15 @@ spring:
 
   flyway:
     enabled: true
-    baseline-on-migrate: false
+    baseline-on-migrate: true
     fail-on-missing-locations: false
     locations:
       - filesystem:db/migration
       - filesystem:../db/migration
       - filesystem:db/seed
       - filesystem:../db/seed
+      - filesystem:db/seed/dev
+      - filesystem:../db/seed/dev
     clean-disabled: true
 
 server:

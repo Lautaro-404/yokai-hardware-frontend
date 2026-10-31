@@ -43,19 +43,19 @@ export default function Header() {
     <header className="fixed top-0 left-0 w-full z-50 bg-surface/95 backdrop-blur-xl border-b border-outline-variant/40 shadow-header">
       <div className="h-20 w-full max-w-[1440px] mx-auto px-4 sm:px-gutter flex items-center justify-between gap-2 sm:gap-space-lg">
         {/* Brand Logo */}
-        <div className="flex items-center gap-2 sm:gap-space-md shrink-0">
-          <Link className="flex items-center gap-space-sm group" to="/">
+        <div className="flex items-center gap-2 sm:gap-space-md shrink-0 min-w-0">
+          <Link className="flex items-center gap-1.5 sm:gap-space-sm group" to="/">
             <img
               alt="Yokai Hardware Kitsune Logo"
-              className="h-8 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+              className="h-7 sm:h-8 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] shrink-0"
               src={STORE_LOGO_URL}
             />
             <div className="flex flex-col">
-              <div className="flex items-center gap-space-xs">
-                <span className="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface-bright">
+              <div className="flex items-center gap-1 sm:gap-space-xs">
+                <span className="font-headline-sm text-base sm:text-headline-sm uppercase tracking-wider text-on-surface-bright">
                   Yokai
                 </span>
-                <span className="font-headline-sm text-headline-sm uppercase tracking-wider text-primary">
+                <span className="font-headline-sm text-base sm:text-headline-sm uppercase tracking-wider text-primary">
                   Hardware
                 </span>
               </div>
@@ -274,7 +274,7 @@ export default function Header() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-surface-container-lowest/98 border-b border-outline-variant/60 px-4 sm:px-gutter py-space-md flex flex-col gap-space-md backdrop-blur-xl max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain shadow-2xl">
+        <div className="lg:hidden bg-surface-container-lowest/98 border-b border-outline-variant/60 px-4 sm:px-gutter py-space-md flex flex-col gap-space-md backdrop-blur-xl max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-y-contain touch-pan-y shadow-2xl">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px]">
               search

@@ -16,3 +16,8 @@ target/
 .settings/
 .classpath
 
+.vercel
+.env*.local
+.env
+!.env.example
+!server/.env.example

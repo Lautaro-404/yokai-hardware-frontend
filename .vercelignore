@@ -1,0 +1,7 @@
+server/
+db/
+.agents/
+docs/
+client/
+.git
+.mvn

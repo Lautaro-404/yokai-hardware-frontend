@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
       {/* Bloque Principal: Galería (Izquierda) + Información de Compra (Derecha) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
         {/* Columna Izquierda: Galería */}
-        <div className="lg:col-span-6 flex flex-col gap-space-md">
+        <div className="lg:col-span-6 min-w-0 flex flex-col gap-space-md">
           <div className="relative w-full aspect-square rounded bg-surface-container-lowest border border-primary-container/40 overflow-hidden flex items-center justify-center p-8 shadow-2xl">
             <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
               <span className="px-3 py-1 rounded bg-surface-container-low/90 border border-primary-container/50 text-primary font-label-sm text-label-sm uppercase tracking-widest">
@@ -196,7 +196,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Columna Derecha: Ficha Comercial */}
-        <div className="lg:col-span-6 flex flex-col gap-space-md p-4 sm:p-space-lg rounded bg-surface-container-low border border-outline-variant/60 shadow-xl">
+        <div className="lg:col-span-6 min-w-0 flex flex-col gap-space-md p-4 sm:p-space-lg rounded bg-surface-container-low border border-outline-variant/60 shadow-xl">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-label-md text-label-md text-primary uppercase tracking-widest font-semibold">
@@ -331,7 +331,7 @@ export default function ProductDetailPage() {
 
       {/* Pestañas de Descripción y Especificaciones */}
       <div className="mt-space-xl rounded bg-surface-container-low border border-outline-variant/60 overflow-hidden shadow-xl">
-        <div className="flex items-center border-b border-outline-variant/50 bg-surface-container-lowest overflow-x-auto whitespace-nowrap">
+        <div className="flex items-center border-b border-outline-variant/50 bg-surface-container-lowest overflow-x-auto whitespace-nowrap touch-pan-x">
           <button
             type="button"
             onClick={() => setActiveTab('especificaciones')}
