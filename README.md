@@ -10,12 +10,12 @@ Plataforma e-commerce completa de hardware y computación (procesadores, placas 
 
 ## 🌐 URLs del Despliegue en Producción
 
-| Servicio | Entorno | URL Pública |
-| :--- | :--- | :--- |
-| **Frontend Web (React SPA)** | Producción (Vercel) | [https://yokai-hardware.vercel.app](https://yokai-hardware.vercel.app) *(o configurar en Vercel según `URL_DEPLOY_FRONTEND`)* |
-| **Backend REST API** | Producción (Cloud Hosting) | `https://yokai-hardware-api.onrender.com/api` *(configurable vía `VITE_API_URL`)* |
-| **Documentación OpenAPI / Swagger** | Producción / Staging | `https://yokai-hardware-api.onrender.com/swagger-ui.html` |
-| **API Health Check** | Producción | `https://yokai-hardware-api.onrender.com/api/health` |
+| Servicio | Plataforma | URL Pública | Estado |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web (React SPA)** | Vercel | [https://yokai-hardware-frontend.vercel.app](https://yokai-hardware-frontend.vercel.app) | Operativo (HTTP 200) |
+| **Backend REST API** | Render | [https://yokai-hardware-api.onrender.com/api](https://yokai-hardware-api.onrender.com/api) | Operativo |
+| **Documentación OpenAPI / Swagger** | Render | [https://yokai-hardware-api.onrender.com/swagger-ui.html](https://yokai-hardware-api.onrender.com/swagger-ui.html) | Operativo (HTTP 200) |
+| **API Health Check** | Render | [https://yokai-hardware-api.onrender.com/api/health](https://yokai-hardware-api.onrender.com/api/health) | `{"status":"UP","database":"UP"}` |
 
 > [!NOTE]
 > En entorno local, el frontend corre en `http://localhost:5173` y se comunica con la API en `http://localhost:8080`.
@@ -76,6 +76,10 @@ El repositorio está organizado como un monorepo limpio:
 │   ├── pages/                  # Pantallas (Home, Catalogo, Detalle, Carrito, Checkout, Pedidos, Login, Registro, Admin)
 │   └── utils/                  # Constantes, formateadores de moneda y fecha
 ├── docker-compose.yml          # Servicio PostgreSQL 15 local
+├── Dockerfile                  # Multi-stage build (Maven + Temurin JRE 17) para Render
+├── render.yaml                 # Blueprint IaC para Render (Web Service + PostgreSQL)
+├── .dockerignore               # Exclusiones de build de contenedor
+├── .vercelignore               # Exclusiones de build de frontend
 ├── mvnw / mvnw.cmd             # Maven Wrapper raíz configurado para server/pom.xml
 ├── package.json                # Dependencias y scripts del frontend
 ├── vercel.json                 # Configuración de despliegue y rewrites SPA en Vercel
@@ -185,30 +189,42 @@ El repositorio incluye una colección integral y documentada de Postman con prue
 ## 🌐 Guía de Despliegue en la Nube
 
 ### 1. Frontend en Vercel
-El archivo [`vercel.json`](./vercel.json) ya define el comando de compilación (`npm run build`), la carpeta de salida (`dist`) y las reglas de reescritura para que las rutas SPA (`/catalogo`, `/producto/:id`, `/pedidos`, `/admin`) funcionen al recargar la página.
+El archivo [`vercel.json`](./vercel.json) define el framework Vite, el comando de build (`npm run build`), la carpeta de salida (`dist`) y las reglas de reescritura SPA para que las rutas internas (`/catalogo`, `/producto/:id`, `/pedidos`, `/admin`) funcionen al recargar.
 
-1. Creá un nuevo proyecto en [Vercel](https://vercel.com/new) e importá el repositorio.
-2. En **Settings → Environment Variables**, configurá:
-   - `VITE_API_URL`: URL pública de la API REST del backend (por ejemplo: `https://TU-BACKEND.onrender.com`).
-3. Desplegá el proyecto.
+1. **Despliegue mediante Vercel CLI:**
+   ```bash
+   # Vincular proyecto
+   vercel link --yes --project yokai-hardware-frontend
 
-### 2. Backend en Render / Railway / Fly.io
-1. Crear una base de datos PostgreSQL gestionada (con SSL habilitado).
-2. Crear un Web Service apuntando a la carpeta `server/` con comando de compilación:
-   ```bash
-   mvn clean package -DskipTests
+   # Configurar variables de entorno
+   vercel env add VITE_API_URL --environment production --environment preview --value "https://yokai-hardware-api.onrender.com" --no-sensitive --yes --force
+   vercel env add VITE_USE_MOCKS --environment production --environment preview --value "false" --no-sensitive --yes --force
+
+   # Desplegar a producción
+   vercel deploy --prod --yes
    ```
-   y comando de inicio:
-   ```bash
-   java -jar target/yokai-hardware-api-1.0.0.jar
-   ```
-3. Configurar las variables de entorno:
-   - `SPRING_PROFILES_ACTIVE`: `prod`
-   - `DB_URL`: `jdbc:postgresql://<host>:<port>/<dbname>?sslmode=require`
-   - `DB_USER`: Usuario de la base de datos
-   - `DB_PASSWORD`: Contraseña de la base de datos
-   - `JWT_SECRET`: Clave secreta aleatoria segura de al menos 32 caracteres
-   - `CORS_ALLOWED_ORIGINS`: URL del frontend desplegado en Vercel (ej: `https://yokai-hardware.vercel.app`)
+2. **URL activa:** [https://yokai-hardware-frontend.vercel.app](https://yokai-hardware-frontend.vercel.app)
+
+### 2. Backend y Base de Datos en Render
+El proyecto cuenta con un [`Dockerfile`](./Dockerfile) multi-etapa y un Blueprint de infraestructura como código [`render.yaml`](./render.yaml).
+
+1. **Base de Datos PostgreSQL en Render:**
+   - Instancia gestionada `yokai-hardware-db` (PostgreSQL 16) con SSL obligatorio (`sslmode=require`).
+   - Flyway ejecuta las migraciones DDL (`V1` a `V9`) y semillas de datos automáticamente en el inicio.
+
+2. **Web Service en Render:**
+   - Desplegado mediante `Render CLI` con entorno Docker.
+   - Variables de entorno configuradas:
+     - `SPRING_PROFILES_ACTIVE`: `prod`
+     - `PORT`: `8080`
+     - `DB_URL`: `jdbc:postgresql://<host>:5432/<dbname>?sslmode=require`
+     - `DB_USER`: Usuario generado por Render Postgres
+     - `DB_PASSWORD`: Contraseña de Render Postgres
+     - `JWT_SECRET`: Clave HMAC-SHA256 para tokens JWT
+     - `CORS_ALLOWED_ORIGINS`: `http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://yokai-hardware-frontend.vercel.app`
+3. **Health Check y Swagger:**
+   - Endpoint de salud: [https://yokai-hardware-api.onrender.com/api/health](https://yokai-hardware-api.onrender.com/api/health)
+   - Swagger UI interactivo: [https://yokai-hardware-api.onrender.com/swagger-ui.html](https://yokai-hardware-api.onrender.com/swagger-ui.html)
 
 ---
 
