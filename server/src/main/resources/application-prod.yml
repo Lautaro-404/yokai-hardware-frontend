@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    # Soporte para Neon / Supabase / Render con SSL obligatorio
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=require}
+    username: ${DB_USER:yokai_app}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      idle-timeout: 120000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      leak-detection-threshold: 30000
+      pool-name: YokaiHikariProdPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    fail-on-missing-locations: false
+    locations:
+      - filesystem:db/migration
+      - filesystem:../db/migration
+      - filesystem:db/seed
+      - filesystem:../db/seed
+    clean-disabled: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}

@@ -1,64 +1,92 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '../api/client';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { loginUsuario, registrarUsuario } from '../api/auth';
+import { clearSession, restoreSession, saveSession } from '../utils/session';
+import { useToast } from './ToastContext';
 
 const AuthContext = createContext(null);
 
+export const SESSION_EXPIRED_MESSAGE =
+  'Tu sesión expiró. Iniciá sesión nuevamente para continuar.';
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_STORAGE_KEY) || null);
-  const [usuario, setUsuario] = useState(() => {
-    try {
-      const saved = localStorage.getItem(USER_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [session, setSession] = useState(() => restoreSession());
   const [loadingAuth, setLoadingAuth] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { showToast } = useToast();
+
+  const { token, usuario } = session;
+
+  // Referencias para que el listener de 401 siempre vea los valores actuales
+  const hadSessionRef = useRef(Boolean(token));
+  const locationRef = useRef(location);
+  hadSessionRef.current = Boolean(token);
+  locationRef.current = location;
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_STORAGE_KEY);
-    setToken(null);
-    setUsuario(null);
+    clearSession();
+    setSession({ token: null, usuario: null });
   }, []);
 
-  // Escucha el evento disparado por el interceptor de Axios ante un HTTP 401
+  // El interceptor de la capa API dispara este evento ante un 401 con sesión activa
   useEffect(() => {
     const handleUnauthorized = () => {
+      if (!hadSessionRef.current) return;
       logout();
+      showToast(SESSION_EXPIRED_MESSAGE, 'warning');
+      navigate('/login', {
+        replace: true,
+        state: { from: locationRef.current, reason: SESSION_EXPIRED_MESSAGE },
+      });
     };
     window.addEventListener('yokai:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('yokai:unauthorized', handleUnauthorized);
-  }, [logout]);
+  }, [logout, navigate, showToast]);
 
-  const login = useCallback(async ({ email, password }) => {
-    setLoadingAuth(true);
-    try {
-      const res = await loginUsuario({ email, password });
-      localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(res.usuario));
-      setToken(res.token);
-      setUsuario(res.usuario);
-      return res.usuario;
-    } finally {
-      setLoadingAuth(false);
-    }
+  const startSession = useCallback((res) => {
+    const basicUser = saveSession(res);
+    setSession({ token: res.token, usuario: basicUser });
+    return basicUser;
   }, []);
 
-  const registro = useCallback(async ({ nombre, email, password, direccion }) => {
-    setLoadingAuth(true);
-    try {
-      const res = await registrarUsuario({ nombre, email, password, direccion });
-      localStorage.setItem(TOKEN_STORAGE_KEY, res.token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(res.usuario));
-      setToken(res.token);
-      setUsuario(res.usuario);
-      return res.usuario;
-    } finally {
-      setLoadingAuth(false);
-    }
-  }, []);
+  const login = useCallback(
+    async ({ email, password }) => {
+      setLoadingAuth(true);
+      try {
+        const res = await loginUsuario({ email: email.trim(), password });
+        return startSession(res);
+      } finally {
+        setLoadingAuth(false);
+      }
+    },
+    [startSession]
+  );
+
+  const registro = useCallback(
+    async ({ nombre, email, password, direccion }) => {
+      setLoadingAuth(true);
+      try {
+        const res = await registrarUsuario({
+          nombre: nombre.trim(),
+          email: email.trim(),
+          password,
+          direccion: direccion?.trim() || '',
+        });
+        return startSession(res);
+      } finally {
+        setLoadingAuth(false);
+      }
+    },
+    [startSession]
+  );
 
   const isAuthenticated = Boolean(token && usuario);
   const isAdmin = Boolean(isAuthenticated && usuario?.rol === 'ADMIN');

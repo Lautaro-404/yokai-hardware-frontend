@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getProductos } from '../api/productos';
 import { getCategorias } from '../api/categorias';
@@ -13,6 +13,13 @@ import { formatARS } from '../utils/formatters';
 
 const PAGE_SIZE = 8;
 
+const DISPONIBILIDAD_LABELS = {
+  EN_STOCK: 'En stock',
+  ULTIMAS_UNIDADES: 'Últimas unidades',
+  SIN_STOCK: 'Sin stock',
+  DISPONIBLE: 'Disponible',
+};
+
 export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -20,6 +27,7 @@ export default function CatalogPage() {
   const filtros = {
     categoria: searchParams.get('categoria') || '',
     marca: searchParams.get('marca') || '',
+    disponibilidad: searchParams.get('disponibilidad') || '',
     precioMin: searchParams.get('precioMin') || '',
     precioMax: searchParams.get('precioMax') || '',
     q: searchParams.get('q') || '',
@@ -36,6 +44,8 @@ export default function CatalogPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filtersError, setFiltersError] = useState(null);
+  const requestIdRef = useRef(0);
   const [localSearch, setLocalSearch] = useState(filtros.q);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -44,16 +54,26 @@ export default function CatalogPage() {
   }, [filtros.q]);
 
   // Carga de categorías y marcas para el sidebar
-  useEffect(() => {
-    Promise.all([getCategorias(), getMarcas()])
+  const loadFilterOptions = useCallback(() => {
+    setFiltersError(null);
+    return Promise.all([getCategorias(), getMarcas()])
       .then(([cats, mrcs]) => {
         setCategorias(cats);
         setMarcas(mrcs);
       })
-      .catch(() => {});
+      .catch((err) => {
+        setFiltersError(
+          err?.message || 'No pudimos cargar las categorías y marcas para filtrar.'
+        );
+      });
   }, []);
 
+  useEffect(() => {
+    loadFilterOptions();
+  }, [loadFilterOptions]);
+
   const fetchCatalog = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -61,16 +81,21 @@ export default function CatalogPage() {
         ...filtros,
         size: PAGE_SIZE,
       });
+      if (requestId !== requestIdRef.current) return;
       setProductosData(res);
     } catch (err) {
-      setError(err?.message || 'Error al consultar el catálogo de productos.');
+      if (requestId !== requestIdRef.current) return;
+      setError(
+        err?.message || 'No pudimos cargar el catálogo. Intentá nuevamente.'
+      );
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filtros.categoria,
     filtros.marca,
+    filtros.disponibilidad,
     filtros.precioMin,
     filtros.precioMax,
     filtros.q,
@@ -113,11 +138,11 @@ export default function CatalogPage() {
   );
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-space-xl">
       {/* Encabezado del Catálogo */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg pb-space-md border-b border-outline-variant/40">
         <div>
-          <div className="flex items-center gap-2 text-outline font-label-sm text-label-sm uppercase tracking-widest mb-2">
+          <div className="flex items-center gap-2 text-outline font-label-sm text-label-sm uppercase tracking-widest mb-2 flex-wrap">
             <Link to="/" className="hover:text-primary transition-colors">
               Inicio
             </Link>
@@ -132,7 +157,7 @@ export default function CatalogPage() {
               </>
             )}
           </div>
-          <h1 className="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface-bright flex items-center gap-3">
+          <h1 className="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface-bright flex items-center gap-3 flex-wrap">
             {activeCategoryObj ? (
               <>
                 <span className="font-serif text-primary">
@@ -155,7 +180,7 @@ export default function CatalogPage() {
 
         {/* Buscador y Selector de Orden */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <form onSubmit={handleSearchForm} className="relative flex items-center">
+          <form onSubmit={handleSearchForm} className="relative flex items-center flex-1 sm:flex-initial">
             <span className="material-symbols-outlined absolute left-3 text-outline text-[18px]">
               search
             </span>
@@ -164,7 +189,7 @@ export default function CatalogPage() {
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder="Buscar modelo o marca..."
-              className="w-full sm:w-60 bg-surface-container-low text-on-surface placeholder:text-outline text-body-sm pl-9 pr-3 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
+              className="w-full sm:w-60 min-h-[44px] bg-surface-container-low text-on-surface placeholder:text-outline text-body-sm pl-9 pr-3 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
             />
           </form>
 
@@ -173,7 +198,7 @@ export default function CatalogPage() {
               value={filtros.orden}
               onChange={(e) => updateUrlParams({ orden: e.target.value })}
               aria-label="Ordenar productos"
-              className="flex-1 sm:w-52 bg-surface-container-low text-on-surface text-body-sm px-3 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
+              className="flex-1 sm:w-52 min-h-[44px] bg-surface-container-low text-on-surface text-body-sm px-3 py-2.5 rounded border border-outline-variant/60 focus:border-primary-container outline-none"
             >
               <option value="">Orden: Destacados Yokai</option>
               <option value="precio_asc">Precio: Menor a Mayor</option>
@@ -185,12 +210,13 @@ export default function CatalogPage() {
             <button
               type="button"
               onClick={() => setMobileFiltersOpen((prev) => !prev)}
-              className="lg:hidden px-3 py-2.5 rounded bg-surface-container-low border border-primary-container/50 text-primary font-label-md flex items-center gap-1.5"
+              aria-expanded={mobileFiltersOpen}
+              className="lg:hidden min-h-[44px] px-3.5 py-2.5 rounded bg-surface-container-low border border-primary-container/50 text-primary font-label-md flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[18px]">
-                filter_list
+                {mobileFiltersOpen ? 'close' : 'filter_list'}
               </span>
-              <span>Filtros</span>
+              <span>{mobileFiltersOpen ? 'Cerrar' : 'Filtros'}</span>
             </button>
           </div>
         </div>
@@ -204,12 +230,22 @@ export default function CatalogPage() {
             mobileFiltersOpen ? 'block' : 'hidden lg:block'
           }`}
         >
+          {filtersError && (
+            <div className="mb-space-md">
+              <ErrorMessage
+                title="No se pudieron cargar los filtros"
+                message={filtersError}
+                onRetry={loadFilterOptions}
+              />
+            </div>
+          )}
           <FilterSidebar
             categorias={categorias}
             marcas={marcas}
             filtros={filtros}
             onChangeFiltro={updateUrlParams}
             onClearFiltros={clearAllFilters}
+            onClose={() => setMobileFiltersOpen(false)}
           />
         </div>
 
@@ -248,6 +284,20 @@ export default function CatalogPage() {
                   <button
                     type="button"
                     onClick={() => updateUrlParams({ marca: '' })}
+                    className="hover:text-on-surface-bright"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filtros.disponibilidad && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high border border-pine text-tertiary font-label-sm">
+                  Disponibilidad:{' '}
+                  {DISPONIBILIDAD_LABELS[filtros.disponibilidad] ||
+                    filtros.disponibilidad}
+                  <button
+                    type="button"
+                    onClick={() => updateUrlParams({ disponibilidad: '' })}
                     className="hover:text-on-surface-bright"
                   >
                     ×
@@ -294,7 +344,7 @@ export default function CatalogPage() {
               kanji="無"
               icon="search_off"
               title="No encontramos componentes con esos filtros"
-              description="Probá ampliando el rango de precio, seleccionando otra marca o limpiando los filtros activos."
+              description="Probá ampliando el rango de precio, cambiando el filtro de disponibilidad o limpiando los filtros activos."
               actionLabel="Restablecer todos los filtros"
               onActionClick={clearAllFilters}
             />

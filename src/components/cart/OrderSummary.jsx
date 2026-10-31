@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { formatARS, getTransferPrice } from '../../utils/formatters';
+import { formatARS } from '../../utils/formatters';
 
 export default function OrderSummary({
   totalItems,
@@ -9,12 +9,8 @@ export default function OrderSummary({
   ctaTo = '/checkout',
   onSubmitOrder = null,
   submitting = false,
+  busy = false,
 }) {
-  const envioGratis = subtotal >= 250000 || subtotal === 0;
-  const costoEnvio = envioGratis ? 0 : 12500;
-  const totalFinal = subtotal + costoEnvio;
-  const totalTransferencia = getTransferPrice(subtotal) + costoEnvio;
-
   return (
     <div className="p-space-lg rounded bg-surface-container-low border border-primary-container/40 flex flex-col gap-space-md shadow-xl sticky top-24">
       <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/40">
@@ -33,40 +29,15 @@ export default function OrderSummary({
             {formatARS(subtotal)}
           </span>
         </div>
-
-        <div className="flex items-center justify-between text-on-surface-variant">
-          <span>Despacho asegurado Andreani</span>
-          {envioGratis ? (
-            <span className="text-tertiary font-semibold uppercase font-label-sm">
-              Bonificado (Gratis)
-            </span>
-          ) : (
-            <span className="text-on-surface-bright">{formatARS(costoEnvio)}</span>
-          )}
-        </div>
       </div>
 
       <div className="pt-space-sm border-t border-outline-variant/40 flex flex-col gap-2">
         <div className="flex items-baseline justify-between">
           <span className="font-label-lg text-label-lg text-on-surface-bright uppercase">
-            Total Lista
+            Total del Pedido
           </span>
-          <span className="font-headline-md text-headline-md text-on-surface-bright font-bold">
-            {formatARS(totalFinal)}
-          </span>
-        </div>
-
-        <div className="p-3 rounded bg-surface-container-lowest border border-vermilion/40 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="font-label-sm text-label-sm text-secondary uppercase">
-              Pago por Transferencia (-10%)
-            </span>
-            <span className="font-body-sm text-xs text-outline">
-              Descuento directo bancario
-            </span>
-          </div>
-          <span className="font-headline-sm text-[18px] text-secondary font-bold">
-            {formatARS(totalTransferencia)}
+          <span className="font-headline-md text-headline-md text-primary font-bold">
+            {formatARS(subtotal)}
           </span>
         </div>
       </div>
@@ -76,7 +47,7 @@ export default function OrderSummary({
           type="submit"
           disabled={submitting || totalItems === 0}
           onClick={onSubmitOrder}
-          className="w-full py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
+          className="w-full min-h-[48px] py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
         >
           <span>{submitting ? 'Procesando pedido...' : ctaLabel}</span>
           <span className="material-symbols-outlined text-[18px]">
@@ -86,7 +57,11 @@ export default function OrderSummary({
       ) : (
         <Link
           to={ctaTo}
-          className="w-full py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow"
+          aria-disabled={busy}
+          onClick={(event) => {
+            if (busy) event.preventDefault();
+          }}
+          className={`${busy ? 'opacity-50 pointer-events-none' : ''} w-full min-h-[48px] py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark text-white font-label-lg text-label-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-secondary/30 shadow-vermilion-glow`}
         >
           <span>{ctaLabel}</span>
           <span className="material-symbols-outlined text-[18px]">

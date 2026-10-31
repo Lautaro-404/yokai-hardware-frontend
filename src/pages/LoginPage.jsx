@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { USE_MOCKS } from '../api/client';
 
 export default function LoginPage() {
   const { login, loadingAuth } = useAuth();
@@ -11,6 +10,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   const redirectTo = location.state?.from?.pathname || '/';
+  const sessionNotice = location.state?.reason || '';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,35 +48,18 @@ export default function LoginPage() {
         navigate(redirectTo, { replace: true });
       }
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'No se pudo iniciar sesión. Verificá tus credenciales.';
-      setFormError(msg);
-    }
-  };
-
-  const handleQuickDemoLogin = async (demoEmail, demoPass) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setFieldErrors({});
-    setFormError('');
-    try {
-      const user = await login({ email: demoEmail, password: demoPass });
-      showToast(`Sesión iniciada como ${user.nombre} (${user.rol})`, 'success');
-      if (user.rol === 'ADMIN' && redirectTo === '/') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(redirectTo, { replace: true });
+      if (err?.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors((prev) => ({ ...prev, ...err.fieldErrors }));
       }
-    } catch (err) {
-      setFormError(err?.message || 'Error en acceso demo.');
+      setFormError(
+        err?.message || 'No se pudo iniciar sesión. Verificá tus credenciales.'
+      );
     }
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
-      <div className="w-full max-w-md p-space-xl rounded bg-surface-container-low border border-primary-container/40 shadow-2xl relative overflow-hidden">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl flex items-center justify-center min-h-[calc(100vh-12rem)]">
+      <div className="w-full max-w-md p-5 sm:p-space-xl rounded bg-surface-container-low border border-primary-container/40 shadow-2xl relative overflow-hidden">
         <span className="pointer-events-none select-none absolute -right-4 -top-6 font-serif text-[130px] text-outline-variant/15 leading-none">
           門
         </span>
@@ -96,8 +79,21 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {sessionNotice && !formError && (
+          <div
+            role="status"
+            className="mb-space-md p-3 rounded bg-surface-container-high border border-primary-container/60 text-primary font-body-sm text-body-sm flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">info</span>
+            <span>{sessionNotice}</span>
+          </div>
+        )}
+
         {formError && (
-          <div className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2">
+          <div
+            role="alert"
+            className="mb-space-md p-3 rounded bg-secondary-container/30 border border-vermilion text-secondary font-body-sm text-body-sm flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-[18px]">error</span>
             <span>{formError}</span>
           </div>
@@ -151,40 +147,12 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loadingAuth}
-            className="w-full mt-2 py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider transition-all border border-secondary/30 shadow-vermilion-glow flex items-center justify-center gap-2"
+            className="w-full min-h-[48px] mt-2 py-3.5 px-6 rounded bg-vermilion hover:bg-vermilion-dark disabled:opacity-50 text-white font-label-lg text-label-lg uppercase tracking-wider transition-all border border-secondary/30 shadow-vermilion-glow flex items-center justify-center gap-2"
           >
             <span>{loadingAuth ? 'Verificando...' : 'Ingresar al Santuario'}</span>
             <span className="material-symbols-outlined text-[18px]">login</span>
           </button>
         </form>
-
-        {USE_MOCKS && (
-          <div className="mt-space-lg pt-space-md border-t border-outline-variant/40 flex flex-col gap-2 relative z-10">
-            <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
-              Acceso rápido (Modo Simulado)
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  handleQuickDemoLogin('cliente@yokaihardware.com.ar', 'cliente123')
-                }
-                className="py-2 px-3 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary border border-outline-variant/60 text-on-surface-variant font-label-sm uppercase tracking-wider transition-colors"
-              >
-                Demo Cliente
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleQuickDemoLogin('admin@yokaihardware.com.ar', 'admin123')
-                }
-                className="py-2 px-3 rounded bg-surface-container-high hover:bg-primary-container hover:text-on-primary border border-primary-container/50 text-primary font-label-sm uppercase tracking-wider transition-colors"
-              >
-                Demo Admin
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="mt-space-lg pt-space-md border-t border-outline-variant/40 text-center font-body-sm text-body-sm text-outline relative z-10">
           ¿Todavía no tenés cuenta?{' '}

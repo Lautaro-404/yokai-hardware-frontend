@@ -1,16 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { formatARS, getTransferPrice } from '../../utils/formatters';
+import { formatARS } from '../../utils/formatters';
 import { useCart } from '../../context/CartContext';
 import { useToast } from '../../context/ToastContext';
 
 export default function ProductCard({ producto }) {
-  const { addToCart } = useCart();
+  const { addToCart, cartBusy } = useCart();
   const { showToast } = useToast();
 
   const stock = Number(producto.stock ?? 0);
-  const sinStock = stock <= 0;
-  const stockBajo = stock > 0 && stock <= 3;
+  const estadoStock =
+    producto.estadoStock ||
+    (stock <= 0 ? 'Sin stock' : stock <= (producto.stockMinimo ?? 3) ? 'Últimas unidades' : 'En stock');
+  const sinStock = estadoStock === 'Sin stock' || stock <= 0;
+  const ultimasUnidades = estadoStock === 'Últimas unidades';
   const isTanuki = String(producto.categoria).toLowerCase() === 'tanuki';
 
   const handleAdd = (e) => {
@@ -36,15 +39,15 @@ export default function ProductCard({ producto }) {
         >
           {sinStock ? (
             <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-error-container/70 border border-error/50 text-error font-label-sm text-label-sm">
-              Sin Stock
+              Sin stock
             </span>
-          ) : stockBajo ? (
+          ) : ultimasUnidades ? (
             <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-secondary-container/40 border border-vermilion/60 text-secondary font-label-sm text-label-sm">
-              {stock === 2 ? `Últimas ${stock} u.` : `En Stock (${stock} u.)`}
+              Últimas unidades ({stock} u.)
             </span>
           ) : (
             <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded bg-surface-container-high border border-primary-container/50 text-primary font-label-sm text-label-sm">
-              En Stock
+              En stock
             </span>
           )}
 
@@ -84,25 +87,24 @@ export default function ProductCard({ producto }) {
         </p>
       </div>
 
-      {/* Precios y botón Agregar al Carrito */}
+      {/* Precio (fuente de verdad: servidor) y botón Agregar al Carrito */}
       <div className="mt-space-md pt-space-sm border-t border-outline-variant/40 flex flex-col gap-2">
         <div className="flex flex-col">
           <span className="font-headline-sm text-headline-sm text-on-surface-bright font-bold tracking-tight">
             {formatARS(producto.precio)}
           </span>
-          <span className="font-label-sm text-label-sm text-secondary font-semibold">
-            {formatARS(getTransferPrice(producto.precio))} en 1 pago transferencia (-10%)
-          </span>
-          <span className="font-body-sm text-body-sm text-outline">
-            Hasta 6 cuotas fijas
-          </span>
+          {producto.sku && (
+            <span className="font-body-sm text-body-sm text-outline">
+              SKU: {producto.sku}
+            </span>
+          )}
         </div>
 
         <button
           type="button"
-          disabled={sinStock}
+          disabled={sinStock || cartBusy}
           onClick={handleAdd}
-          className={`w-full mt-2 py-2.5 px-4 rounded font-label-md text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
+          className={`disabled:opacity-60 disabled:cursor-not-allowed w-full mt-2 min-h-[44px] py-2.5 px-4 rounded font-label-md text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
             sinStock
               ? 'bg-surface-container-high text-outline border-outline-variant/40 cursor-not-allowed'
               : 'bg-vermilion hover:bg-vermilion-dark text-white border-secondary/30 shadow-vermilion-sm'
@@ -111,7 +113,7 @@ export default function ProductCard({ producto }) {
           <span className="material-symbols-outlined text-[18px]">
             {sinStock ? 'block' : 'shopping_bag'}
           </span>
-          <span>{sinStock ? 'Agotado' : 'Agregar al carrito'}</span>
+          <span>{sinStock ? 'Sin stock' : 'Agregar al carrito'}</span>
         </button>
       </div>
     </div>

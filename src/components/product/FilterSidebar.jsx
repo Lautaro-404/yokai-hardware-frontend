@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
+const OPCIONES_DISPONIBILIDAD = [
+  { value: '', label: 'Todas las existencias' },
+  { value: 'EN_STOCK', label: 'En stock' },
+  { value: 'ULTIMAS_UNIDADES', label: 'Últimas unidades' },
+  { value: 'SIN_STOCK', label: 'Sin stock' },
+];
+
 export default function FilterSidebar({
   categorias = [],
   marcas = [],
   filtros,
   onChangeFiltro,
   onClearFiltros,
+  onClose = null,
 }) {
   const [minInput, setMinInput] = useState(filtros.precioMin || '');
   const [maxInput, setMaxInput] = useState(filtros.precioMax || '');
@@ -26,6 +34,7 @@ export default function FilterSidebar({
   const hasActiveFilters = Boolean(
     filtros.categoria ||
       filtros.marca ||
+      filtros.disponibilidad ||
       filtros.precioMin ||
       filtros.precioMax ||
       filtros.q
@@ -42,15 +51,27 @@ export default function FilterSidebar({
             Filtros del Santuario
           </h3>
         </div>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={onClearFiltros}
-            className="font-label-sm text-label-sm text-secondary hover:text-on-surface-bright uppercase tracking-wider transition-colors"
-          >
-            Limpiar
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onClearFiltros}
+              className="font-label-sm text-label-sm text-secondary hover:text-on-surface-bright uppercase tracking-wider transition-colors py-1 px-1.5"
+            >
+              Limpiar
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar panel de filtros"
+              className="lg:hidden w-8 h-8 rounded bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-outline hover:text-on-surface-bright transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Categorías Yokai */}
@@ -99,6 +120,36 @@ export default function FilterSidebar({
                   </span>
                 </div>
                 <span className="font-serif text-sm">{cat.kanji}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Disponibilidad de Stock */}
+      <div className="flex flex-col gap-space-sm pt-space-sm border-t border-outline-variant/40">
+        <span className="font-label-md text-label-md text-primary uppercase tracking-wider font-semibold">
+          Disponibilidad
+        </span>
+        <div className="flex flex-col gap-1">
+          {OPCIONES_DISPONIBILIDAD.map((opt) => {
+            const active = (filtros.disponibilidad || '') === opt.value;
+            return (
+              <button
+                key={opt.value || 'ALL'}
+                type="button"
+                onClick={() =>
+                  onChangeFiltro({
+                    disponibilidad: active && opt.value !== '' ? '' : opt.value,
+                  })
+                }
+                className={`w-full text-left px-3 py-2 rounded font-body-sm text-body-sm flex items-center justify-between transition-colors ${
+                  active
+                    ? 'bg-primary-container text-on-primary font-bold'
+                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface-bright'
+                }`}
+              >
+                <span>{opt.label}</span>
               </button>
             );
           })}
@@ -164,7 +215,7 @@ export default function FilterSidebar({
                 key={m.id || m.nombre}
                 type="button"
                 onClick={() => onChangeFiltro({ marca: active ? '' : m.nombre })}
-                className={`px-2.5 py-1 rounded font-label-sm text-label-sm uppercase tracking-wider border transition-colors ${
+                className={`px-3 py-1.5 min-h-[36px] rounded font-label-sm text-label-sm uppercase tracking-wider border transition-colors ${
                   active
                     ? 'bg-vermilion text-white border-secondary/50 shadow-vermilion-sm'
                     : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant/60 hover:border-primary-container/60 hover:text-on-surface-bright'
@@ -176,6 +227,19 @@ export default function FilterSidebar({
           })}
         </div>
       </div>
+
+      {onClose && (
+        <div className="pt-space-sm border-t border-outline-variant/40 lg:hidden">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 px-4 min-h-[44px] rounded bg-primary-container text-on-primary font-label-md font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">check</span>
+            <span>Ver resultados</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

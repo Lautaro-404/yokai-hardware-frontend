@@ -2,16 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { getMisPedidos } from '../api/pedidos';
 import { formatARS, formatDateAR } from '../utils/formatters';
+import { ESTADO_PEDIDO_LABEL, ESTADO_PEDIDO_BADGE } from '../utils/constants';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorMessage from '../components/ui/ErrorMessage';
-
-const ESTADO_BADGE = {
-  PENDIENTE: 'bg-surface-container-high border-primary-container/60 text-primary',
-  CONFIRMADO: 'bg-primary-container/20 border-primary text-primary-fixed',
-  ENVIADO: 'bg-pine/30 border-pine text-tertiary',
-  ENTREGADO: 'bg-pine/50 border-tertiary text-on-tertiary-container',
-  CANCELADO: 'bg-error-container/60 border-error/60 text-error',
-};
 
 export default function OrdersPage() {
   const [pedidos, setPedidos] = useState([]);
@@ -36,7 +29,7 @@ export default function OrdersPage() {
   }, [loadOrders]);
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+    <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-6 sm:py-space-xl">
       <div className="mb-space-lg pb-space-md border-b border-outline-variant/40 flex flex-col sm:flex-row sm:items-end justify-between gap-space-md">
         <div>
           <div className="flex items-center gap-2 text-outline font-label-sm text-label-sm uppercase tracking-widest mb-2">
@@ -56,9 +49,9 @@ export default function OrdersPage() {
 
         <Link
           to="/catalogo"
-          className="px-4 py-2.5 rounded bg-surface-container-low hover:bg-surface-container-high border border-primary-container/40 text-primary font-label-md uppercase tracking-wider self-start sm:self-auto"
+          className="min-h-[44px] inline-flex items-center justify-center px-4 py-2.5 rounded bg-surface-container-low hover:bg-surface-container-high border border-primary-container/40 text-primary font-label-md uppercase tracking-wider self-start sm:self-auto"
         >
-          Nueva Compra
+          Ir al Catálogo
         </Link>
       </div>
 
@@ -78,23 +71,24 @@ export default function OrdersPage() {
           kanji="歴"
           icon="receipt_long"
           title="Todavía no registrás pedidos"
-          description="Cuando confirmes tu primera compra en Yokai Hardware, aparecerá listada en esta sección junto con su código de seguimiento."
-          actionLabel="Explorar Catálogo"
+          description="Cuando confirmes tu primera compra, aparecerá listada en esta sección junto con su estado y el detalle de tus productos."
+          actionLabel="Ir al Catálogo"
           actionTo="/catalogo"
         />
       ) : (
         <div className="flex flex-col gap-space-md">
           {pedidos.map((pedido) => {
             const badgeStyle =
-              ESTADO_BADGE[pedido.estado] || ESTADO_BADGE.PENDIENTE;
+              ESTADO_PEDIDO_BADGE[pedido.estado] ||
+              ESTADO_PEDIDO_BADGE.PENDIENTE_PAGO;
             return (
               <div
                 key={pedido.id}
                 className="rounded bg-surface-container-low border border-outline-variant/60 overflow-hidden shadow-lg"
               >
                 {/* Cabecera del Pedido */}
-                <div className="px-space-lg py-space-md bg-surface-container-lowest border-b border-outline-variant/40 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-space-lg">
+                <div className="px-4 sm:px-space-lg py-3 sm:py-space-md bg-surface-container-lowest border-b border-outline-variant/40 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-space-lg">
                     <div>
                       <span className="font-label-sm text-label-sm text-outline uppercase block">
                         Orden
@@ -124,12 +118,12 @@ export default function OrdersPage() {
                   <span
                     className={`px-3 py-1 rounded border font-label-sm text-label-sm uppercase tracking-wider ${badgeStyle}`}
                   >
-                    {pedido.estado}
+                    {ESTADO_PEDIDO_LABEL[pedido.estado] || pedido.estado}
                   </span>
                 </div>
 
                 {/* Cuerpo del Pedido */}
-                <div className="p-space-lg flex flex-col gap-space-md">
+                <div className="p-4 sm:p-space-lg flex flex-col gap-space-md">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-body-sm text-outline pb-space-sm border-b border-outline-variant/30">
                     <div>
                       <strong className="text-on-surface-variant">
@@ -151,7 +145,7 @@ export default function OrdersPage() {
                         key={`${pedido.id}-${det.productoId || idx}`}
                         className="flex items-center justify-between gap-3 p-3 rounded bg-surface-container border border-outline-variant/40"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           {det.imagen && (
                             <img
                               src={det.imagen}
@@ -159,7 +153,7 @@ export default function OrdersPage() {
                               className="w-12 h-12 object-contain rounded bg-surface-container-lowest p-1 shrink-0"
                             />
                           )}
-                          <div>
+                          <div className="min-w-0">
                             <Link
                               to={`/producto/${det.productoId}`}
                               className="font-body-sm text-on-surface-bright hover:text-primary font-semibold line-clamp-1"

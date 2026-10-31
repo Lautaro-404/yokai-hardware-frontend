@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { YOKAI_LOGO_URL } from '../../mocks/productosMock';
+import { STORE_LOGO_URL } from '../../utils/constants';
 
 export default function Footer() {
   return (
     <footer className="w-full bg-surface-container-lowest text-on-surface-variant relative border-t border-outline-variant/50">
       <div className="w-full h-px bg-gradient-to-r from-transparent via-primary-container/50 to-transparent" />
-      <div className="w-full max-w-[1440px] mx-auto px-gutter py-space-xl">
+      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-gutter py-8 sm:py-space-xl">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
           {/* Columna 1: Identidad Yokai */}
           <div className="flex flex-col gap-space-md">
@@ -14,7 +14,7 @@ export default function Footer() {
               <img
                 alt="Yokai Hardware Kitsune Logo"
                 className="h-8 w-auto object-contain drop-shadow-[0_0_6px_rgba(212,175,55,0.4)]"
-                src={YOKAI_LOGO_URL}
+                src={STORE_LOGO_URL}
               />
               <div className="flex flex-col">
                 <span className="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface-bright">
@@ -35,7 +35,7 @@ export default function Footer() {
                 href="#comunidad"
                 onClick={(e) => e.preventDefault()}
                 aria-label="Instagram Yokai Hardware"
-                className="w-9 h-9 rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">tag</span>
               </a>
@@ -43,7 +43,7 @@ export default function Footer() {
                 href="#comunidad"
                 onClick={(e) => e.preventDefault()}
                 aria-label="Discord Yokai Hardware"
-                className="w-9 h-9 rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">forum</span>
               </a>
@@ -51,7 +51,7 @@ export default function Footer() {
                 href="#comunidad"
                 onClick={(e) => e.preventDefault()}
                 aria-label="YouTube Yokai Hardware"
-                className="w-9 h-9 rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">play_circle</span>
               </a>
@@ -59,7 +59,7 @@ export default function Footer() {
                 href="#comunidad"
                 onClick={(e) => e.preventDefault()}
                 aria-label="Comunidad Yokai Hardware"
-                className="w-9 h-9 rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
+                className="w-10 h-10 min-w-[40px] min-h-[40px] rounded bg-surface-container-low border border-outline-variant/60 flex items-center justify-center text-outline hover:text-on-surface-bright hover:bg-surface-container-high transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">public</span>
               </a>
@@ -219,7 +219,7 @@ export default function Footer() {
           <p className="font-body-sm text-body-sm text-outline text-center sm:text-left">
             © 2026 Yokai Hardware. Todos los derechos reservados. Industria Argentina.
           </p>
-          <div className="flex items-center gap-space-md font-body-sm text-body-sm text-outline">
+          <div className="flex flex-wrap justify-center sm:justify-start items-center gap-space-md font-body-sm text-body-sm text-outline">
             <Link to="/catalogo" className="hover:text-on-surface-bright transition-colors">
               Términos de Servicio
             </Link>

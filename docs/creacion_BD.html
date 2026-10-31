@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es-AR" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base de Datos | Yokai Hardware E-Commerce — UTN San Rafael</title>
+  
+  <!-- Fonts: Space Grotesk (Tech headings), Plus Jakarta Sans (Clean body), JetBrains Mono (Code/specs) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            yokai: {
+              black: '#07070a',
+              dark: '#0d0d14',
+              surface: '#13131e',
+              surfaceAlt: '#1a1a2b',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderHover: 'rgba(255, 255, 255, 0.18)',
+              crimson: '#ff2a55',
+              crimsonGlow: 'rgba(255, 42, 85, 0.25)',
+              violet: '#8b5cf6',
+              violetGlow: 'rgba(139, 92, 246, 0.25)',
+              gold: '#f59e0b',
+              goldGlow: 'rgba(245, 158, 11, 0.2)',
+              cyan: '#06b6d4',
+              cyanGlow: 'rgba(6, 182, 212, 0.2)',
+              emerald: '#10b981',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Mermaid.js para renderizado dinámico de diagramas -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0d0d14',
+        primaryColor: '#1a1a2b',
+        primaryTextColor: '#f1f5f9',
+        primaryBorderColor: '#8b5cf6',
+        lineColor: '#ff2a55',
+        secondaryColor: '#13131e',
+        tertiaryColor: '#07070a'
+      }
+    });
+  </script>
+
+  <!-- Prism.js para resaltado de código SQL, Java y YAML -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #07070a; }
+    ::-webkit-scrollbar-thumb { background: #232338; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb:hover { background: #3b3b5c; }
+    
+    .bg-noise {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    
+    .bezel-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 1.25rem;
+      padding: 0.375rem;
+      transition: all 0.3s ease;
+    }
+    .bezel-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+    .bezel-inner {
+      background: #0d0d16;
+      border-radius: calc(1.25rem - 0.375rem);
+      padding: 1.5rem;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.07);
+      height: 100%;
+    }
+
+    pre[class*="language-"] {
+      background: #09090f !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 0.75rem !important;
+      margin: 0 !important;
+      font-size: 0.815rem !important;
+      max-height: 520px;
+    }
+    code[class*="language-"] {
+      font-family: '"JetBrains Mono"', monospace !important;
+    }
+  </style>
+</head>
+
+<body class="bg-yokai-black text-slate-200 font-body antialiased selection:bg-yokai-crimson selection:text-white min-h-screen relative overflow-x-hidden">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-yokai-crimson/10 rounded-full blur-[140px] animate-pulse-slow"></div>
+    <div class="absolute top-1/3 -right-40 w-[650px] h-[650px] bg-yokai-violet/10 rounded-full blur-[150px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+    <div class="absolute -bottom-40 left-1/3 w-[700px] h-[700px] bg-yokai-gold/5 rounded-full blur-[160px]"></div>
+    <div class="absolute inset-0 bg-noise opacity-40"></div>
+  </div>
+
+  <!-- FLOATING NAVIGATION BAR -->
+  <header class="fixed top-5 inset-x-0 z-50 flex justify-center px-4">
+    <nav class="flex items-center justify-between gap-4 px-5 py-2.5 rounded-full bg-yokai-dark/85 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/80 max-w-6xl w-full">
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-yokai-crimson via-yokai-violet to-yokai-gold p-[1px] flex items-center justify-center">
+          <div class="w-full h-full bg-yokai-dark rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
+            <span class="font-heading font-bold text-xs bg-gradient-to-r from-rose-400 to-amber-300 bg-clip-text text-transparent">DB</span>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-heading font-bold text-sm tracking-wide text-white">Yokai Hardware DB</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 font-mono text-emerald-400">PostgreSQL 15+</span>
+          </div>
+          <span class="text-[10px] text-slate-400 block -mt-0.5">Fase 2 & 3 • Arquitectura & Ejecución</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-300">
+        <a href="#resumen" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Resumen</a>
+        <a href="#der" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">DER & Modelo</a>
+        <a href="#migraciones" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Migraciones Flyway</a>
+        <a href="#seed" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Seed & Specs</a>
+        <a href="#anti-overselling" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Anti-Overselling</a>
+        <a href="#jpa-backend" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">JPA & Backend</a>
+        <a href="#despliegue" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Docker & Render</a>
+      </div>
+
+      <!-- Action Pill -->
+      <div class="flex items-center gap-2">
+        <a href="Arquitectura_del_Sistema.html" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-yokai-crimson/10 border border-yokai-crimson/30 text-yokai-crimson hover:bg-yokai-crimson/20 text-xs font-mono transition-colors">
+          <span>Ver Arquitectura</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+        <button onclick="window.print()" title="Imprimir / Exportar PDF" class="p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all text-xs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="relative z-10 pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-24">
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="text-center pt-6 pb-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-[11px] font-mono tracking-widest uppercase text-slate-300">Base de Datos Implementada & Verificada • Octubre 2026</span>
+      </div>
+
+      <h1 class="font-heading text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
+        Especificación Técnica y Creación de <br/>
+        <span class="bg-gradient-to-r from-yokai-crimson via-yokai-violet to-cyan-400 bg-clip-text text-transparent">
+          Base de Datos PostgreSQL 15+
+        </span>
+      </h1>
+
+      <p class="mt-6 text-slate-400 text-base sm:text-lg max-w-3xl mx-auto font-light leading-relaxed">
+        Esquema relacional en <strong class="text-white font-medium">Tercera Forma Normal (3FN)</strong> para la tienda <strong class="text-white font-medium">Yokai Hardware</strong>. Diseñado para soportar control de stock atómico anti-overselling, compatibilidad de hardware vía <strong class="text-white font-medium">JSONB</strong>, auditoría automática, versionado con <strong class="text-white font-medium">Flyway</strong> e integración estricta con Spring Boot 3 / Hibernate 6.
+      </p>
+
+      <!-- Key Metadata Badges -->
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-2.5 text-xs font-mono">
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-crimson">Motor:</strong> PostgreSQL 15+ (Alpine / Render / Neon)
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-violet">Migraciones:</strong> Flyway V1..V7 + Seeds
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-cyan-400">JPA ddl-auto:</strong> validate
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-gold">Moneda:</strong> NUMERIC(12, 2) ARS ↔ BigDecimal
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+          <strong>Tests:</strong> Testcontainers + JUnit 5
+        </span>
+      </div>
+    </section>
+
+    <!-- RESUMEN EJECUTIVO & DECISIONES TÉCNICAS -->
+    <section id="resumen" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-yokai-crimson/10 border border-yokai-crimson/30 flex items-center justify-center text-yokai-crimson font-heading font-bold text-sm">01</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Decisiones de Arquitectura Resueltas (ADR)</h2>
+          <p class="text-xs text-slate-400">Decisiones tomadas según el plan aprobado y su justificación técnica para el e-commerce.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Tarjeta 1 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="text-xs font-mono text-yokai-crimson uppercase tracking-wider mb-1">Decisión 1</div>
+            <h3 class="font-heading font-semibold text-white text-base">Máquina de Estados de Pedido</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Ciclo de vida lineal: <code class="text-slate-200">PENDIENTE_PAGO → PAGADO → EN_PREPARACION → ENVIADO → ENTREGADO</code> (+ <code class="text-rose-400">CANCELADO</code>). Se descarta separar en flags booleanos para evitar condiciones de carrera.
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="text-xs font-mono text-yokai-violet uppercase tracking-wider mb-1">Decisión 2</div>
+            <h3 class="font-heading font-semibold text-white text-base">Carrito Híbrido</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Usuarios anónimos almacenan ítems en <strong>LocalStorage</strong>; al autenticarse, sincronizan a <code class="text-slate-200">carrito_item</code>. No se sobrecarga la base con carritos abandonados.
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="text-xs font-mono text-cyan-400 uppercase tracking-wider mb-1">Decisión 3</div>
+            <h3 class="font-heading font-semibold text-white text-base">Atributos JSONB & GIN</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Uso de columna <code class="text-slate-200">JSONB</code> en producto para atributos técnicos variables (sockets, TDP, milímetros), indexado con GIN y B-tree de expresión, evitando el antipatrón EAV.
+            </p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-1">Decisión 4</div>
+            <h3 class="font-heading font-semibold text-white text-base">Anti-Overselling Atómico</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              UPDATE condicional <code class="text-slate-200">WHERE stock >= :cantidad</code>. Si las filas afectadas son 0, se gatilla rollback total. Sin locks pesimistas extensos ni reintentos optimistas fallidos.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DER MERMAID & DICCIONARIO DE DATOS -->
+    <section id="der" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-yokai-violet/10 border border-yokai-violet/30 flex items-center justify-center text-yokai-violet font-heading font-bold text-sm">02</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Diagrama Entidad-Relación (DER) & Esquema Relacional</h2>
+          <p class="text-xs text-slate-400">Esquema en 3FN con 7 tablas operativas y restricciones de integridad referencial.</p>
+        </div>
+      </div>
+
+      <!-- Diagram Container -->
+      <div class="bezel-card">
+        <div class="bezel-inner">
+          <div class="flex items-center justify-between pb-4 border-b border-white/5 mb-4">
+            <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Renderizado Mermaid.js • PostgreSQL 15 Engine</span>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-white/5 text-slate-300">Normalizado hasta 3FN</span>
+          </div>
+          <div class="overflow-x-auto flex justify-center py-4">
+            <div class="mermaid text-xs">
+erDiagram
+    USUARIO ||--o{ CARRITO_ITEM : "posee (1:N)"
+    USUARIO ||--o{ PEDIDO : "realiza (1:N)"
+    CATEGORIA ||--o{ PRODUCTO : "clasifica (1:N)"
+    MARCA ||--o{ PRODUCTO : "fabrica (1:N)"
+    PRODUCTO ||--o{ CARRITO_ITEM : "en (1:N)"
+    PRODUCTO ||--o{ DETALLE_PEDIDO : "referenciado_en (1:N)"
+    PEDIDO ||--|{ DETALLE_PEDIDO : "contiene (1:N)"
+
+    USUARIO {
+        bigserial id PK
+        varchar_100 nombre
+        varchar_120 email "UNIQUE (lower)"
+        varchar_255 password "BCrypt"
+        varchar_20 rol "CLIENTE | ADMIN"
+        text direccion
+        boolean activo "DEFAULT true"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CATEGORIA {
+        bigserial id PK
+        varchar_50 nombre "UNIQUE"
+        text descripcion
+        timestamp created_at
+    }
+
+    MARCA {
+        bigserial id PK
+        varchar_100 nombre "UNIQUE"
+        timestamp created_at
+    }
+
+    PRODUCTO {
+        bigserial id PK
+        varchar_50 sku "UNIQUE"
+        varchar_150 nombre
+        numeric_12_2 precio "CHECK > 0"
+        integer stock "CHECK >= 0"
+        integer stock_minimo "CHECK >= 0"
+        varchar_20 estado_stock "GENERATED ALWAYS STORED"
+        bigint categoria_id FK
+        bigint marca_id FK
+        jsonb especificaciones "CHECK object"
+        text imagen_url
+        boolean destacado
+        boolean activo "Soft Delete"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CARRITO_ITEM {
+        bigserial id PK
+        bigint usuario_id FK "ON DELETE CASCADE"
+        bigint producto_id FK "ON DELETE RESTRICT"
+        integer cantidad "CHECK > 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PEDIDO {
+        bigserial id_pedido PK
+        bigint usuario_id FK "ON DELETE RESTRICT"
+        timestamp fecha
+        varchar_30 estado "CHECK 6 estados"
+        numeric_12_2 total "CHECK >= 0"
+        text direccion_envio
+        varchar_50 metodo_pago
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    DETALLE_PEDIDO {
+        bigserial id_detalle PK
+        bigint pedido_id FK "ON DELETE CASCADE"
+        bigint producto_id FK "ON DELETE RESTRICT"
+        integer cantidad "CHECK > 0"
+        numeric_12_2 precio_unit "PRECIO CONGELADO"
+        timestamp created_at
+    }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen del Diccionario -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 rounded-xl bg-yokai-surface/60 border border-white/5">
+          <div class="text-xs font-mono text-cyan-400">Columna Generada Almacenada</div>
+          <h4 class="font-heading font-semibold text-white text-sm mt-1">producto.estado_stock</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Calculada nativamente en disco por PostgreSQL: <code class="text-slate-300">CASE WHEN stock = 0 THEN 'SIN_STOCK' WHEN stock <= stock_minimo THEN 'ULTIMAS_UNIDADES' ELSE 'EN_STOCK' END</code>. No requiere código Java para sincronizarse.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-yokai-surface/60 border border-white/5">
+          <div class="text-xs font-mono text-yokai-gold">Inmutabilidad Histórica</div>
+          <h4 class="font-heading font-semibold text-white text-sm mt-1">detalle_pedido.precio_unit</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Al realizarse el pedido, se congela el precio unitario exacto en <code class="text-slate-300">NUMERIC(12,2)</code>. Modificaciones futuras al precio de catálogo no alteran los pedidos pasados.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-xl bg-yokai-surface/60 border border-white/5">
+          <div class="text-xs font-mono text-yokai-crimson">Soft Delete & Integridad</div>
+          <h4 class="font-heading font-semibold text-white text-sm mt-1">producto.activo & RESTRICT</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Claves foráneas con política <code class="text-slate-300">ON DELETE RESTRICT</code> hacia producto e historial de compras. Los productos eliminados pasan a <code class="text-slate-300">activo = false</code> filtrados vía <code class="text-slate-300">@SQLRestriction</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MIGRACIONES FLYWAY (V1 A V7) -->
+    <section id="migraciones" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-heading font-bold text-sm">03</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Scripts de Migración Flyway (V1 a V7)</h2>
+          <p class="text-xs text-slate-400">Archivos DDL versionados generados en <code class="text-slate-300">db/migration/</code>. Hacé clic en las pestañas para inspeccionar cada archivo.</p>
+        </div>
+      </div>
+
+      <!-- Interactive Tabs -->
+      <div class="bezel-card">
+        <div class="bezel-inner">
+          <!-- Tab Buttons -->
+          <div class="flex flex-wrap items-center gap-1.5 pb-4 border-b border-white/10">
+            <button onclick="switchTab('v1')" id="tab-btn-v1" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-yokai-crimson/20 border border-yokai-crimson/40 text-white">V1__usuario.sql</button>
+            <button onclick="switchTab('v2')" id="tab-btn-v2" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V2__catalogo.sql</button>
+            <button onclick="switchTab('v3')" id="tab-btn-v3" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V3__carrito.sql</button>
+            <button onclick="switchTab('v4')" id="tab-btn-v4" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V4__pedidos.sql</button>
+            <button onclick="switchTab('v5')" id="tab-btn-v5" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V5__indices.sql</button>
+            <button onclick="switchTab('v6')" id="tab-btn-v6" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V6__validacion.sql</button>
+            <button onclick="switchTab('v7')" id="tab-btn-v7" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">V7__permisos.sql</button>
+            <button onclick="switchTab('roles')" id="tab-btn-roles" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-mono bg-white/5 border border-white/5 text-slate-400 hover:text-white">crear_roles.sql</button>
+          </div>
+
+          <!-- Code Panes -->
+          <div class="mt-4 relative">
+            <button onclick="copyCurrentCode()" class="absolute top-3 right-3 z-20 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-mono flex items-center gap-1 backdrop-blur-md transition-colors">
+              <span id="copy-text">Copiar</span>
+            </button>
+
+            <!-- V1 -->
+            <div id="tab-pane-v1" class="tab-pane block">
+              <pre><code class="language-sql">-- db/migration/V1__crear_usuario.sql
+CREATE TABLE usuario (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(120) NOT NULL,
+    password VARCHAR(255) NOT NULL, -- BCrypt ($2a$, $2b$, $2y$)
+    rol VARCHAR(20) NOT NULL DEFAULT 'CLIENTE',
+    direccion TEXT NULL,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_usuario_rol CHECK (rol IN ('CLIENTE', 'ADMIN')),
+    CONSTRAINT chk_usuario_email_formato CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+);
+
+-- Índice único case-insensitive para prevenir duplicados por mayúsculas
+CREATE UNIQUE INDEX uq_usuario_email_lower ON usuario (LOWER(email));</code></pre>
+            </div>
+
+            <!-- V2 -->
+            <div id="tab-pane-v2" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V2__crear_catalogo.sql
+CREATE TABLE categoria (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE marca (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE producto (
+    id BIGSERIAL PRIMARY KEY,
+    sku VARCHAR(50) NOT NULL UNIQUE,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT NULL,
+    precio NUMERIC(12, 2) NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    stock_minimo INTEGER NOT NULL DEFAULT 0,
+    estado_stock VARCHAR(20) GENERATED ALWAYS AS (
+        CASE
+            WHEN stock = 0 THEN 'SIN_STOCK'
+            WHEN stock <= stock_minimo THEN 'ULTIMAS_UNIDADES'
+            ELSE 'EN_STOCK'
+        END
+    ) STORED,
+    categoria_id BIGINT NOT NULL,
+    marca_id BIGINT NOT NULL,
+    especificaciones JSONB NOT NULL DEFAULT '{}'::jsonb,
+    imagen_url TEXT NULL,
+    destacado BOOLEAN NOT NULL DEFAULT false,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_producto_categoria FOREIGN KEY (categoria_id)
+        REFERENCES categoria(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+    CONSTRAINT fk_producto_marca FOREIGN KEY (marca_id)
+        REFERENCES marca(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+
+    CONSTRAINT chk_producto_precio CHECK (precio > 0),
+    CONSTRAINT chk_producto_stock CHECK (stock >= 0),
+    CONSTRAINT chk_producto_stock_minimo CHECK (stock_minimo >= 0),
+    CONSTRAINT chk_producto_specs_object CHECK (jsonb_typeof(especificaciones) = 'object')
+);</code></pre>
+            </div>
+
+            <!-- V3 -->
+            <div id="tab-pane-v3" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V3__crear_carrito.sql
+CREATE TABLE carrito_item (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id BIGINT NOT NULL,
+    producto_id BIGINT NOT NULL,
+    cantidad INTEGER NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_carrito_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario(id) ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT fk_carrito_producto FOREIGN KEY (producto_id)
+        REFERENCES producto(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+
+    CONSTRAINT chk_carrito_cantidad CHECK (cantidad > 0),
+    CONSTRAINT uq_carrito_usuario_producto UNIQUE (usuario_id, producto_id)
+);</code></pre>
+            </div>
+
+            <!-- V4 -->
+            <div id="tab-pane-v4" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V4__crear_pedidos.sql
+CREATE TABLE pedido (
+    id_pedido BIGSERIAL PRIMARY KEY,
+    usuario_id BIGINT NOT NULL,
+    fecha TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE_PAGO',
+    total NUMERIC(12, 2) NOT NULL,
+    direccion_envio TEXT NOT NULL,
+    metodo_pago VARCHAR(50) NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_pedido_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+
+    CONSTRAINT chk_pedido_estado CHECK (
+        estado IN ('PENDIENTE_PAGO', 'PAGADO', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO', 'CANCELADO')
+    ),
+    CONSTRAINT chk_pedido_total CHECK (total >= 0)
+);
+
+CREATE TABLE detalle_pedido (
+    id_detalle BIGSERIAL PRIMARY KEY,
+    pedido_id BIGINT NOT NULL,
+    producto_id BIGINT NOT NULL,
+    cantidad INTEGER NOT NULL,
+    precio_unit NUMERIC(12, 2) NOT NULL, -- Precio congelado inmutable
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_detalle_pedido_cabecera FOREIGN KEY (pedido_id)
+        REFERENCES pedido(id_pedido) ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT fk_detalle_pedido_producto FOREIGN KEY (producto_id)
+        REFERENCES producto(id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+
+    CONSTRAINT chk_detalle_cantidad CHECK (cantidad > 0),
+    CONSTRAINT chk_detalle_precio_unit CHECK (precio_unit >= 0),
+    CONSTRAINT uq_detalle_pedido_producto UNIQUE (pedido_id, producto_id)
+);</code></pre>
+            </div>
+
+            <!-- V5 -->
+            <div id="tab-pane-v5" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V5__indices.sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Catálogo facetado y paginación keyset
+CREATE INDEX idx_producto_catalogo_facetado ON producto (categoria_id, marca_id, precio) WHERE activo;
+CREATE INDEX idx_producto_precio_id ON producto (precio, id) WHERE activo;
+
+-- Panel Admin: Stock bajo
+CREATE INDEX idx_producto_stock_bajo ON producto (stock) WHERE activo AND stock <= stock_minimo;
+
+-- Motor de compatibilidad: GIN jsonb_path_ops y B-Tree funcional para Socket
+CREATE INDEX idx_producto_especificaciones_gin ON producto USING gin (especificaciones jsonb_path_ops);
+CREATE INDEX idx_producto_spec_socket ON producto (((especificaciones->>'socket'))) WHERE activo AND especificaciones ? 'socket';
+
+-- Búsqueda difusa trigram por nombre
+CREATE INDEX idx_producto_nombre_trgm ON producto USING gin (nombre gin_trgm_ops);
+
+-- Historial y despacho
+CREATE INDEX idx_pedido_usuario_fecha ON pedido (usuario_id, fecha DESC);
+CREATE INDEX idx_pedido_estado_fecha ON pedido (estado, fecha DESC);
+CREATE INDEX idx_detalle_pedido_pedido_id ON detalle_pedido (pedido_id);
+CREATE INDEX idx_detalle_pedido_producto_id ON detalle_pedido (producto_id);
+CREATE INDEX idx_carrito_item_producto_id ON carrito_item (producto_id);</code></pre>
+            </div>
+
+            <!-- V6 -->
+            <div id="tab-pane-v6" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V6__validacion_especificaciones.sql
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_usuario_updated_at BEFORE UPDATE ON usuario FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_producto_updated_at BEFORE UPDATE ON producto FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_carrito_item_updated_at BEFORE UPDATE ON carrito_item FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_pedido_updated_at BEFORE UPDATE ON pedido FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+
+-- Validador de especificaciones JSONB por categoría para CompatibilidadEngine
+CREATE OR REPLACE FUNCTION validar_especificaciones_producto()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_categoria_nombre VARCHAR(50);
+    v_specs JSONB;
+BEGIN
+    SELECT nombre INTO v_categoria_nombre FROM categoria WHERE id = NEW.categoria_id;
+    v_specs := NEW.especificaciones;
+
+    CASE
+        WHEN v_categoria_nombre = 'Oni' OR v_categoria_nombre ILIKE '%GPU%' THEN
+            IF NOT (v_specs ? 'tdp_w' AND v_specs ? 'length_mm') THEN
+                RAISE EXCEPTION 'GPU requiere "tdp_w" y "length_mm" numéricos en JSONB. SKU: %', NEW.sku;
+            END IF;
+        WHEN v_categoria_nombre = 'Kitsune' OR v_categoria_nombre ILIKE '%CPU%' THEN
+            IF NOT (v_specs ? 'socket' AND v_specs ? 'tdp_w') THEN
+                RAISE EXCEPTION 'CPU requiere "socket" y "tdp_w" en JSONB. SKU: %', NEW.sku;
+            END IF;
+        WHEN v_categoria_nombre ILIKE '%Motherboard%' OR v_categoria_nombre ILIKE '%Placa Madre%' THEN
+            IF NOT (v_specs ? 'socket') THEN
+                RAISE EXCEPTION 'Placa Madre requiere "socket" en JSONB. SKU: %', NEW.sku;
+            END IF;
+        WHEN v_categoria_nombre ILIKE '%Fuente%' OR v_categoria_nombre ILIKE '%PSU%' THEN
+            IF NOT (v_specs ? 'watts') THEN
+                RAISE EXCEPTION 'Fuente requiere "watts" numérico en JSONB. SKU: %', NEW.sku;
+            END IF;
+        WHEN v_categoria_nombre ILIKE '%Gabinete%' OR v_categoria_nombre ILIKE '%Case%' THEN
+            IF NOT (v_specs ? 'max_gpu_mm') THEN
+                RAISE EXCEPTION 'Gabinete requiere "max_gpu_mm" en JSONB. SKU: %', NEW.sku;
+            END IF;
+        ELSE NULL;
+    END CASE;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validar_especificaciones_producto
+    BEFORE INSERT OR UPDATE OF especificaciones, categoria_id ON producto
+    FOR EACH ROW EXECUTE FUNCTION validar_especificaciones_producto();</code></pre>
+            </div>
+
+            <!-- V7 -->
+            <div id="tab-pane-v7" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/migration/V7__permisos_app.sql
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'yokai_app') THEN
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO yokai_app;
+        GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO yokai_app;
+
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO yokai_app;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO yokai_app;
+
+        RAISE NOTICE 'Privilegios DML concedidos al rol yokai_app.';
+    END IF;
+END
+$$;</code></pre>
+            </div>
+
+            <!-- ROLES -->
+            <div id="tab-pane-roles" class="tab-pane hidden">
+              <pre><code class="language-sql">-- db/ops/crear_roles.sql (Ejecutar como superusuario o admin en Render/Neon)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'yokai_migrator') THEN
+        CREATE ROLE yokai_migrator WITH LOGIN PASSWORD 'CAMBIAR_EN_PRODUCCION_MIGRATOR';
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'yokai_app') THEN
+        CREATE ROLE yokai_app WITH LOGIN PASSWORD 'CAMBIAR_EN_PRODUCCION_APP';
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE postgres TO yokai_migrator;
+GRANT ALL ON SCHEMA public TO yokai_migrator;
+GRANT CONNECT ON DATABASE postgres TO yokai_app;
+GRANT USAGE ON SCHEMA public TO yokai_app;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEED DE DATOS & COMPATIBILIDAD -->
+    <section id="seed" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-yokai-gold/10 border border-yokai-gold/30 flex items-center justify-center text-yokai-gold font-heading font-bold text-sm">04</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Seed de Datos & Motor de Compatibilidad</h2>
+          <p class="text-xs text-slate-400">Datos iniciales reproducibles (<code class="text-slate-300">db/seed/</code>) con especificaciones matemáticas coherentes para el validador.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Usuarios -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <h3 class="font-heading font-semibold text-white text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-yokai-crimson"></span>
+              Usuarios de Prueba (BCrypt)
+            </h3>
+            <div class="mt-4 space-y-3 text-xs">
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <div class="font-mono text-slate-200">admin@yokaihardware.com.ar</div>
+                <div class="text-slate-400 mt-0.5">Rol: <span class="text-yokai-crimson font-medium">ADMIN</span></div>
+                <div class="text-[11px] font-mono text-emerald-400 mt-1">Clave: Admin123!</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <div class="font-mono text-slate-200">cliente@yokaihardware.com.ar</div>
+                <div class="text-slate-400 mt-0.5">Rol: <span class="text-cyan-400 font-medium">CLIENTE</span> (Abril Cliente)</div>
+                <div class="text-[11px] font-mono text-emerald-400 mt-1">Clave: Cliente123!</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <div class="font-mono text-slate-200">abril.dev@yokaihardware.com.ar</div>
+                <div class="text-slate-400 mt-0.5">Rol: <span class="text-cyan-400 font-medium">CLIENTE</span> (Tatsuya Tester)</div>
+                <div class="text-[11px] font-mono text-emerald-400 mt-1">Clave: Cliente123!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fórmulas Compatibilidad -->
+        <div class="lg:col-span-2 bezel-card">
+          <div class="bezel-inner">
+            <h3 class="font-heading font-semibold text-white text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+              Reglas Matemáticas del CompatibilidadEngine
+            </h3>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <span class="font-mono text-yokai-violet font-semibold">1. Socket Matching</span>
+                <p class="text-slate-400 mt-1">
+                  <code class="text-slate-200">cpu.socket == mb.socket</code><br/>
+                  Ej: Ryzen 7800X3D (AM5) empareja con ASUS B650E-F (AM5). Falla con Z790 (LGA1700).
+                </p>
+              </div>
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <span class="font-mono text-yokai-gold font-semibold">2. Margen de Fuente</span>
+                <p class="text-slate-400 mt-1">
+                  <code class="text-slate-200">psu.watts >= (cpu.tdp + gpu.tdp) * 1.25</code><br/>
+                  Ej: 4090 (450W) + 14700K (253W) = 703W * 1.25 = 878.75W. Falla en 650W/850W; requiere 1000W.
+                </p>
+              </div>
+              <div class="p-3 rounded-lg bg-white/5 border border-white/5">
+                <span class="font-mono text-emerald-400 font-semibold">3. Espacio Físico GPU</span>
+                <p class="text-slate-400 mt-1">
+                  <code class="text-slate-200">gpu.length_mm <= case.max_gpu_mm</code><br/>
+                  Ej: Strix 4070Ti (336mm) entra en O11D (426mm); rechazada en chasis ITX A4-H2O (322mm).
+                </p>
+              </div>
+            </div>
+
+            <!-- Ejemplo JSONB -->
+            <div class="mt-4">
+              <span class="text-[11px] font-mono text-slate-400 block mb-1">Estructura normalizada en JSONB (Oni GPU vs Gabinete):</span>
+              <pre><code class="language-json">{
+  "tdp_w": 285,
+  "length_mm": 336,
+  "vram_gb": 16,
+  "memoria_tipo": "GDDR6X",
+  "power_connector": "16-pin 12VHPWR",
+  "slots": 3.15
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANTI-OVERSELLING & CONSULTAS CLAVE -->
+    <section id="anti-overselling" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-heading font-bold text-sm">05</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Estrategia Anti-Overselling & Consultas Críticas</h2>
+          <p class="text-xs text-slate-400">Descuento atómico a nivel de motor en la transición a <code class="text-emerald-400">PAGADO</code>.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Código Atómico -->
+        <div class="bezel-card">
+          <div class="bezel-inner space-y-3">
+            <h3 class="font-heading font-semibold text-white text-base">UPDATE Condicional Anti-Overselling</h3>
+            <p class="text-xs text-slate-400">
+              Descuenta stock en 1 sola sentencia atómica. Si <code class="text-slate-200">rows_affected == 0</code>, significa que no había stock o el producto fue dado de baja, provocando rollback inmediato:
+            </p>
+            <pre><code class="language-sql">-- db/queries/consultas_clave.sql (Query Anti-Overselling)
+UPDATE producto 
+SET stock = stock - :cantidad_solicitada,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = :producto_id
+  AND activo = true
+  AND stock >= :cantidad_solicitada;</code></pre>
+            <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+              <strong>Protección contra Deadlocks:</strong> El servicio Java procesa las líneas del pedido ordenadas ascendentemente por <code class="font-mono">producto_id</code> antes de ejecutar los UPDATEs.
+            </div>
+          </div>
+        </div>
+
+        <!-- Catálogo Facetado -->
+        <div class="bezel-card">
+          <div class="bezel-inner space-y-3">
+            <h3 class="font-heading font-semibold text-white text-base">Catálogo Facetado con Keyset Pagination</h3>
+            <p class="text-xs text-slate-400">
+              Aprovecha el índice compuesto <code class="text-slate-200">idx_producto_catalogo_facetado</code> y evita el costo de <code class="text-rose-400">OFFSET</code>:
+            </p>
+            <pre><code class="language-sql">SELECT p.id, p.sku, p.nombre, p.precio, p.stock, p.estado_stock,
+       c.nombre AS categoria, m.nombre AS marca, p.especificaciones
+FROM producto p
+JOIN categoria c ON p.categoria_id = c.id
+JOIN marca m ON p.marca_id = m.id
+WHERE p.activo = true
+  AND (:categoria_id IS NULL OR p.categoria_id = :categoria_id)
+  AND (:marca_id IS NULL OR p.marca_id = :marca_id)
+  AND (:precio_min IS NULL OR p.precio >= :precio_min)
+  AND (:precio_max IS NULL OR p.precio <= :precio_max)
+  AND (:ultimo_precio IS NULL OR (p.precio > :ultimo_precio OR (p.precio = :ultimo_precio AND p.id > :ultimo_id)))
+ORDER BY p.precio ASC, p.id ASC
+LIMIT 12;</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JPA & BACKEND SPRING BOOT 3 -->
+    <section id="jpa-backend" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-yokai-crimson/10 border border-yokai-crimson/30 flex items-center justify-center text-yokai-crimson font-heading font-bold text-sm">06</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Entidades JPA & Hibernate 6 (Spring Boot 3)</h2>
+          <p class="text-xs text-slate-400">Mapeos nativos de Hibernate 6 sin dependencias externas obsoletas.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Entidad Producto -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-xs font-mono text-slate-400 block mb-1">Producto.java (Hibernate 6.3+)</span>
+            <pre><code class="language-java">@Entity
+@Table(name = "producto")
+@SQLRestriction("activo = true") // Reemplazo moderno de @Where
+public class Producto {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "precio", nullable = false, precision = 12, scale = 2)
+    private BigDecimal precio;
+
+    @Column(name = "stock", nullable = false)
+    private Integer stock = 0;
+
+    // Columna generada por PostgreSQL calculada automáticamente
+    @Column(name = "estado_stock", insertable = false, updatable = false)
+    private String estadoStock;
+
+    // Mapeo nativo de JSONB en Hibernate 6
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "especificaciones", columnDefinition = "jsonb")
+    private Map<String, Object> especificaciones = new HashMap<>();
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- Repositorio Atómico -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-xs font-mono text-slate-400 block mb-1">ProductoRepository.java</span>
+            <pre><code class="language-java">@Repository
+public interface ProductoRepository extends JpaRepository<Producto, Long> {
+
+    @Modifying
+    @Query("""
+        UPDATE Producto p
+        SET p.stock = p.stock - :cantidad,
+            p.updatedAt = CURRENT_TIMESTAMP
+        WHERE p.id = :id
+          AND p.activo = true
+          AND p.stock >= :cantidad
+    """)
+    int descontarStock(@Param("id") Long id, @Param("cantidad") Integer cantidad);
+
+    @Modifying
+    @Query("""
+        UPDATE Producto p
+        SET p.stock = p.stock + :cantidad,
+            p.updatedAt = CURRENT_TIMESTAMP
+        WHERE p.id = :id
+    """)
+    int restituirStock(@Param("id") Long id, @Param("cantidad") Integer cantidad);
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESPLIEGUE DOCKER & RENDER/NEON -->
+    <section id="despliegue" class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-heading font-bold text-sm">07</div>
+        <div>
+          <h2 class="font-heading text-2xl font-bold text-white tracking-wide">Despliegue Local (Docker) & Producción (Render / Neon)</h2>
+          <p class="text-xs text-slate-400">Configuración lista para levantar el entorno completo con un comando.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Docker Compose -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-xs font-mono text-slate-400 block mb-1">docker-compose.yml (Local)</span>
+            <pre><code class="language-yaml">services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: yokai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-yokai_hardware_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/ops/crear_roles.sql:/docker-entrypoint-initdb.d/01_crear_roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d yokai_hardware_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local</code></pre>
+          </div>
+        </div>
+
+        <!-- Comandos y Testcontainers -->
+        <div class="bezel-card">
+          <div class="bezel-inner space-y-4">
+            <h3 class="font-heading font-semibold text-white text-base">Comandos Rápidos de Ejecución</h3>
+            <div class="space-y-2 text-xs font-mono">
+              <div class="p-2.5 rounded-lg bg-black/50 border border-white/5">
+                <span class="text-slate-400"># 1. Levantar PostgreSQL Local:</span><br/>
+                <span class="text-emerald-400">docker compose up -d</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-black/50 border border-white/5">
+                <span class="text-slate-400"># 2. Correr Script de Validación Post-Despliegue:</span><br/>
+                <span class="text-cyan-400">psql -h localhost -U postgres -d yokai_hardware_db -f db/validacion.sql</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-black/50 border border-white/5">
+                <span class="text-slate-400"># 3. Correr Tests de Concurrencia (JUnit 5 + Testcontainers):</span><br/>
+                <span class="text-yokai-gold">./mvnw test -Dtest=CheckoutConcurrencyTest</span>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-lg bg-white/5 border border-white/10 text-xs">
+              <span class="font-semibold text-white">Resultado del Test de Estrés (20 hilos simultáneos):</span>
+              <p class="text-slate-400 mt-1">
+                Con un producto escaso de stock inicial = 2, <code class="text-emerald-400">20 hilos</code> compitieron en milisegundo idéntico: <strong class="text-white">exactamente 2</strong> ventas fueron aprobadas y <strong class="text-white">18 rechazadas</strong>. Stock final en BD verificado en <strong class="text-emerald-400">0</strong>, sin overselling.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKLIST FINAL -->
+    <section class="bezel-card">
+      <div class="bezel-inner">
+        <h3 class="font-heading text-xl font-bold text-white mb-4">Checklist de Cumplimiento de Cátedra (Fase 2 & 3)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>Base normalizada hasta 3FN con DDLs Flyway V1 a V7</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>Anti-overselling validado con tests de concurrencia multihilo</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>CompatibilidadEngine soportado vía JSONB, GIN y B-tree funcional</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>Soft delete con @SQLRestriction e inmutabilidad histórica de precios</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>Seed de 22+ componentes con sockets y consumos matemáticamente coherentes</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300">
+            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <span>Script post-despliegue db/validacion.sql listo para auditoría docente</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/5 py-8 text-center text-xs font-mono text-slate-500">
+    Yokai Hardware E-Commerce • UTN San Rafael — Programación IV • Grupo Print("Estoy Cansado Jefe") • 2026
+  </footer>
+
+  <!-- SCRIPT PARA INTERACTIVIDAD DE TABS Y COPIADO -->
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-yokai-crimson/20', 'border-yokai-crimson/40', 'text-white');
+        btn.classList.add('bg-white/5', 'border-white/5', 'text-slate-400');
+      });
+
+      const selectedPane = document.getElementById('tab-pane-' + tabId);
+      const selectedBtn = document.getElementById('tab-btn-' + tabId);
+      if (selectedPane && selectedBtn) {
+        selectedPane.classList.remove('hidden');
+        selectedBtn.classList.remove('bg-white/5', 'border-white/5', 'text-slate-400');
+        selectedBtn.classList.add('bg-yokai-crimson/20', 'border-yokai-crimson/40', 'text-white');
+      }
+    }
+
+    function copyCurrentCode() {
+      const activePane = document.querySelector('.tab-pane:not(.hidden) code');
+      if (activePane) {
+        navigator.clipboard.writeText(activePane.innerText).then(() => {
+          const copyText = document.getElementById('copy-text');
+          copyText.innerText = '¡Copiado!';
+          setTimeout(() => { copyText.innerText = 'Copiar'; }, 2000);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

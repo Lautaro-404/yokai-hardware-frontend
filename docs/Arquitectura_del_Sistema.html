@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="es-AR" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arquitectura de Sistema | Yokai Hardware — Print("Estoy Cansado Jefe")</title>
+  
+  <!-- Fonts: Space Grotesk (Tech headings), Plus Jakarta Sans (Clean body), JetBrains Mono (Code/specs) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            yokai: {
+              black: '#07070a',
+              dark: '#0d0d14',
+              surface: '#13131e',
+              surfaceAlt: '#1a1a2b',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderHover: 'rgba(255, 255, 255, 0.18)',
+              crimson: '#ff2a55',
+              crimsonGlow: 'rgba(255, 42, 85, 0.25)',
+              violet: '#8b5cf6',
+              violetGlow: 'rgba(139, 92, 246, 0.25)',
+              gold: '#f59e0b',
+              goldGlow: 'rgba(245, 158, 11, 0.2)',
+              cyan: '#06b6d4',
+              cyanGlow: 'rgba(6, 182, 212, 0.2)',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'data-pulse': 'dataPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            dataPulse: {
+              '0%': { opacity: '0.2', transform: 'scale(0.95)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+              '100%': { opacity: '0.2', transform: 'scale(0.95)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom ultra-smooth scroll and dark scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #07070a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #232338;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b3b5c;
+    }
+    
+    /* Noise texture overlay */
+    .bg-noise {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    
+    /* Glass card double-bezel */
+    .bezel-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 1.5rem;
+      padding: 0.375rem;
+      transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .bezel-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+    }
+    .bezel-inner {
+      background: #0d0d16;
+      border-radius: calc(1.5rem - 0.375rem);
+      padding: 1.5rem;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.07);
+      height: 100%;
+    }
+
+    /* Animated gradient borders */
+    .glow-crimson {
+      box-shadow: 0 0 50px -10px rgba(255, 42, 85, 0.2);
+    }
+    .glow-violet {
+      box-shadow: 0 0 50px -10px rgba(139, 92, 246, 0.2);
+    }
+    .glow-gold {
+      box-shadow: 0 0 50px -10px rgba(245, 158, 11, 0.15);
+    }
+  </style>
+</head>
+
+<body class="bg-yokai-black text-slate-200 font-body antialiased selection:bg-yokai-crimson selection:text-white min-h-screen relative overflow-x-hidden">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-40 -left-40 w-[600px] h-[600px] bg-yokai-crimson/10 rounded-full blur-[140px] animate-pulse-slow"></div>
+    <div class="absolute top-1/3 -right-40 w-[650px] h-[650px] bg-yokai-violet/10 rounded-full blur-[150px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+    <div class="absolute -bottom-40 left-1/3 w-[700px] h-[700px] bg-yokai-gold/5 rounded-full blur-[160px]"></div>
+    <div class="absolute inset-0 bg-noise opacity-40"></div>
+  </div>
+
+  <!-- FLOATING NAVIGATION BAR -->
+  <header class="fixed top-5 inset-x-0 z-50 flex justify-center px-4">
+    <nav class="flex items-center justify-between gap-4 px-5 py-2.5 rounded-full bg-yokai-dark/80 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/80 max-w-5xl w-full">
+      <!-- Brand Logo -->
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-yokai-crimson via-yokai-violet to-yokai-gold p-[1px] flex items-center justify-center">
+          <div class="w-full h-full bg-yokai-dark rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
+            <span class="font-heading font-bold text-xs bg-gradient-to-r from-rose-400 to-amber-300 bg-clip-text text-transparent">鬼</span>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-heading font-bold text-sm tracking-wide text-white">Yokai Hardware</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 font-mono text-slate-300">v1.0</span>
+          </div>
+          <span class="text-[10px] text-slate-400 block -mt-0.5">Print("Estoy Cansado Jefe")</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="hidden md:flex items-center gap-1 text-xs font-medium text-slate-300">
+        <a href="#arquitectura" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Arquitectura</a>
+        <a href="#flujo-datos" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Flujos del Sistema</a>
+        <a href="#modelo-datos" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Modelo de Datos</a>
+        <a href="#api-rest" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Endpoints REST</a>
+        <a href="#compatibilidad" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Motor de Validación</a>
+        <a href="#roadmap" class="px-3 py-1.5 rounded-full hover:text-white hover:bg-white/5 transition-colors">Roadmap & Plan</a>
+      </div>
+
+      <!-- Action Pill & Status -->
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>UTN Prog IV • Nov 10</span>
+        </div>
+        <button onclick="window.print()" title="Imprimir o Exportar PDF" class="p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all text-xs flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="relative z-10 pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-28">
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="relative text-center pt-8 pb-12">
+      <!-- Eyebrow Pill -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6 shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-yokai-crimson animate-pulse"></span>
+        <span class="text-[11px] font-mono tracking-widest uppercase text-slate-300">Documento de Arquitectura de Software • Programación IV</span>
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
+        Arquitectura del Sistema <br/>
+        <span class="bg-gradient-to-r from-yokai-crimson via-yokai-violet to-yokai-gold bg-clip-text text-transparent">
+          Yokai Hardware E-Commerce
+        </span>
+      </h1>
+
+      <!-- Subtitle Description -->
+      <p class="mt-6 text-slate-400 text-base sm:text-lg max-w-3xl mx-auto font-light leading-relaxed">
+        Plataforma full-stack desacoplada con backend en <strong class="text-white font-medium">Java 17 + Spring Boot</strong>, arquitectura multicapa en micro-servicios lógicos, seguridad stateless <strong class="text-white font-medium">JWT</strong>, base de datos relacional <strong class="text-white font-medium">PostgreSQL</strong> y frontend reactivo en <strong class="text-white font-medium">React 18</strong> con estética Kinpaku & Sumi.
+      </p>
+
+      <!-- Key Project Metadata Badges -->
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs font-mono">
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-crimson">Grupo:</strong> Print("Estoy Cansado Jefe")
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-violet">Cátedra:</strong> UTN San Rafael — 4º Semestre
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-yokai-gold">Fecha Límite:</strong> 10 de Noviembre, 2026
+        </span>
+        <span class="px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-slate-300">
+          <strong class="text-cyan-400">Entrega:</strong> MVP Desplegado + Repo + Video 30min
+        </span>
+      </div>
+
+      <!-- Highlights Bento Grid -->
+      <div class="mt-14 grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
+        <!-- Card 1: Disponibilidad y Catálogo -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="w-10 h-10 rounded-xl bg-yokai-crimson/10 border border-yokai-crimson/30 flex items-center justify-center text-yokai-crimson mb-4">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            </div>
+            <h3 class="font-heading font-semibold text-white text-base">Catálogo Facetado</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Filtros multicriterio por categoría Yokai (Oni, Kitsune, Tengu), marcas, rango de precios y stock en tiempo real.
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 2: Motor de Compatibilidad -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="w-10 h-10 rounded-xl bg-yokai-violet/10 border border-yokai-violet/30 flex items-center justify-center text-yokai-violet mb-4">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h3 class="font-heading font-semibold text-white text-base">Validación de Hardware</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Motor algorítmico que verifica sockets CPU-Motherboard, TDP de fuentes y compatibilidad física de componentes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 3: Transacciones y Stock Atómico -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="w-10 h-10 rounded-xl bg-yokai-gold/10 border border-yokai-gold/30 flex items-center justify-center text-yokai-gold mb-4">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="font-heading font-semibold text-white text-base">Checkout Atómico</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Transacciones ACID (`@Transactional`) con bloqueo para evitar sobreventa (*overselling*) y sincronización de carrito.
+            </p>
+          </div>
+        </div>
+
+        <!-- Card 4: Seguridad & Deploy Cloud -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+            </div>
+            <h3 class="font-heading font-semibold text-white text-base">JWT & Cloud Deploy</h3>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+              Autenticación stateless, BCrypt, RBAC (Cliente/Admin), API REST documentada con Swagger y despliegue público en la nube.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: ARQUITECTURA EN CAPAS (INTERACTIVE ARCHITECTURE BLUEPRINT) -->
+    <section id="arquitectura" class="scroll-mt-28">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-yokai-crimson">01. Estructura y Capas de la Aplicación</span>
+          <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Arquitectura Multicapa del Sistema</h2>
+          <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+            Diseño desacoplado basado en capas lógicas estrictas para garantizar escalabilidad, separación de responsabilidades y fácil mantenimiento.
+          </p>
+        </div>
+
+        <!-- Tier Switcher Buttons -->
+        <div class="flex items-center gap-1.5 p-1 rounded-xl bg-yokai-surface border border-white/10 text-xs font-medium">
+          <button onclick="switchTier('all')" id="btn-all" class="tier-tab-btn active px-3 py-1.5 rounded-lg bg-white/10 text-white transition-all">Vista Global</button>
+          <button onclick="switchTier('frontend')" id="btn-frontend" class="tier-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">Frontend</button>
+          <button onclick="switchTier('security')" id="btn-security" class="tier-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">Seguridad / API</button>
+          <button onclick="switchTier('backend')" id="btn-backend" class="tier-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">Servicios</button>
+          <button onclick="switchTier('database')" id="btn-database" class="tier-tab-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">Base de Datos</button>
+        </div>
+      </div>
+
+      <!-- VISUAL ARCHITECTURE STACK -->
+      <div class="space-y-4" id="architecture-stack">
+
+        <!-- LAYER 1: CLIENT & PRESENTATION (FRONTEND) -->
+        <div class="tier-block transition-all duration-300" data-tier="frontend">
+          <div class="bezel-card">
+            <div class="bezel-inner border-l-4 border-l-cyan-400">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex-shrink-0 flex items-center justify-center text-cyan-400 font-mono text-lg font-bold">
+                    C1
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-semibold">Capa de Presentación</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-slate-300">Client-Side SPA</span>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white mt-0.5">Frontend React 18 & UI Yokai</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                      Interfaz SPA con React Router v6, Tailwind CSS v3 y Vite. Gestión global de estado con Context API (Auth, Carrito y Toast). Interceptores Axios para inyección de token JWT Bearer y control de sesión ante errores 401.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-cyan-300">React 18</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-cyan-300">Vite 5</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-cyan-300">Tailwind CSS</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-cyan-300">Axios Interceptors</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-cyan-300">Vercel / Netlify</span>
+                </div>
+              </div>
+
+              <!-- Subcomponents Breakdown -->
+              <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-cyan-400 font-medium block">Rutas Públicas</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Inicio, Catálogo Facetado con Filtros Yokai, Detalle con validación de stock, Login y Registro.</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-cyan-400 font-medium block">Rutas Cliente Protegidas</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Carrito persistente en LocalStorage, Checkout con validación de envíos en ARS e Historial de Pedidos.</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-cyan-400 font-medium block">Rutas Admin (Exclusivas)</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Panel `/admin` con ABM de productos/categorías, edición rápida de stock y actualización de estados de pedidos.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 1: HTTP/REST & JWT -->
+        <div class="flex items-center justify-center py-1">
+          <div class="flex items-center gap-3 px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-slate-400">
+            <span>HTTP/1.1 REST API</span>
+            <span class="text-yokai-crimson">↔</span>
+            <span>JSON Payloads</span>
+            <span class="text-yokai-violet">↔</span>
+            <span class="text-amber-400">Authorization: Bearer &lt;JWT&gt;</span>
+          </div>
+        </div>
+
+        <!-- LAYER 2: SECURITY & GATEWAY (CONTROLLERS) -->
+        <div class="tier-block transition-all duration-300" data-tier="security">
+          <div class="bezel-card">
+            <div class="bezel-inner border-l-4 border-l-yokai-violet">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-yokai-violet/10 border border-yokai-violet/30 flex-shrink-0 flex items-center justify-center text-yokai-violet font-mono text-lg font-bold">
+                    C2
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-yokai-violet font-semibold">Capa de Controladores & Seguridad</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-slate-300">Spring Security 6</span>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white mt-0.5">REST Controllers & Filtro JWT</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                      Punto de entrada de las peticiones HTTP. Spring Security intercepta cada solicitud, extrae el token JWT, valida su firma criptográfica y establece el contexto de seguridad (Roles: ROLE_CLIENTE, ROLE_ADMIN). Validación declarativa de DTOs con `@Valid` y manejo global de excepciones (`@ControllerAdvice`).
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-purple-300">Spring Web MVC</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-purple-300">JWT (jjwt 0.11+)</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-purple-300">BCrypt Password Encoder</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-purple-300">Swagger / OpenAPI 3.0</span>
+                </div>
+              </div>
+
+              <!-- Controller Endpoints Mapping -->
+              <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                <div class="p-2 rounded bg-black/30 border border-white/5 text-slate-300">
+                  <span class="text-emerald-400 font-bold">POST</span> /api/auth/**
+                </div>
+                <div class="p-2 rounded bg-black/30 border border-white/5 text-slate-300">
+                  <span class="text-sky-400 font-bold">GET</span> /api/productos/**
+                </div>
+                <div class="p-2 rounded bg-black/30 border border-white/5 text-slate-300">
+                  <span class="text-amber-400 font-bold">POST/PUT</span> /api/carrito/**
+                </div>
+                <div class="p-2 rounded bg-black/30 border border-white/5 text-slate-300">
+                  <span class="text-rose-400 font-bold">ALL</span> /api/admin/**
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 2: INTERNAL SERVICE INVOCATION -->
+        <div class="flex items-center justify-center py-1">
+          <div class="flex items-center gap-3 px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-slate-400">
+            <span>Inyección de Dependencias (@Autowired)</span>
+            <span class="text-yokai-violet">↓</span>
+            <span>DTOs / Model Mappers</span>
+          </div>
+        </div>
+
+        <!-- LAYER 3: BUSINESS LOGIC & DOMAIN (SERVICES) -->
+        <div class="tier-block transition-all duration-300" data-tier="backend">
+          <div class="bezel-card">
+            <div class="bezel-inner border-l-4 border-l-yokai-crimson">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-yokai-crimson/10 border border-yokai-crimson/30 flex-shrink-0 flex items-center justify-center text-yokai-crimson font-mono text-lg font-bold">
+                    C3
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-yokai-crimson font-semibold">Capa de Lógica de Negocio</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-slate-300">Spring Boot Services</span>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white mt-0.5">Servicios de Dominio & Motor de Reglas</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                      Implementa todas las reglas de negocio del e-commerce: cálculo de estados de stock, gestión transaccional de pedidos (`@Transactional`), descuento atómico de inventario para prevención de overselling, y el motor de validación de compatibilidad técnica de hardware.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-rose-300">Java 17 LTS</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-rose-300">Spring Boot 3.x</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-rose-300">@Transactional ACID</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-rose-300">JUnit 5 & Mockito</span>
+                </div>
+              </div>
+
+              <!-- Domain Services Grid -->
+              <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-yokai-crimson font-semibold block">AuthService</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Cifrado con BCrypt, emisión de tokens JWT, autenticación y registro de clientes.</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-yokai-crimson font-semibold block">ProductoService</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Filtros facetados, paginación, cálculo de estados ("En stock", "Últimas unidades", "Sin stock").</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-yokai-crimson font-semibold block">PedidoService</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Checkout atómico, validación y decremento de stock, generación de detalles de pedido.</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                  <span class="text-yokai-crimson font-semibold block">CompatibilidadEngine</span>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Validación de socket CPU-Placa madre, estimación de TDP de fuente y compatibilidad física.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR 3: ORM & JPA QUERIES -->
+        <div class="flex items-center justify-center py-1">
+          <div class="flex items-center gap-3 px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-slate-400">
+            <span>Spring Data JPA Repositories</span>
+            <span class="text-amber-400">↓</span>
+            <span>Hibernate ORM / JPQL / SQL Nativo</span>
+          </div>
+        </div>
+
+        <!-- LAYER 4: DATA ACCESS & PERSISTENCE (DATABASE) -->
+        <div class="tier-block transition-all duration-300" data-tier="database">
+          <div class="bezel-card">
+            <div class="bezel-inner border-l-4 border-l-yokai-gold">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-yokai-gold/10 border border-yokai-gold/30 flex-shrink-0 flex items-center justify-center text-yokai-gold font-mono text-lg font-bold">
+                    C4
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-yokai-gold font-semibold">Capa de Persistencia & Base de Datos</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-slate-300">RDBMS Relacional</span>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white mt-0.5">PostgreSQL con Hibernate ORM</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                      Almacenamiento persistente normalizado (3FN). Manejo de integridad referencial, índices para optimización de búsquedas por categoría y precio, claves foráneas en cascada y aislamiento de transacciones con soporte para bloqueo pesimista/optimista en operaciones de stock.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-amber-300">PostgreSQL 15+</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-amber-300">Hibernate 6</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-amber-300">HikariCP Pool</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-amber-300">Supabase / Neon DB</span>
+                </div>
+              </div>
+
+              <!-- Entities Summary -->
+              <div class="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-2 text-xs font-mono">
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">Usuario</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">Categoria</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">Marca</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">Producto</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">CarritoItem</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">Pedido</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">DetallePedido</span>
+                <span class="px-3 py-1 rounded-md bg-black/40 border border-white/10 text-slate-300">ReservaStock (Deseable)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAYER 5: DEVOPS & CLOUD DEPLOY -->
+        <div class="tier-block transition-all duration-300" data-tier="all">
+          <div class="bezel-card">
+            <div class="bezel-inner border-l-4 border-l-emerald-400">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex-shrink-0 flex items-center justify-center text-emerald-400 font-mono text-lg font-bold">
+                    C5
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-semibold">Infraestructura & Despliegue</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-white/10 text-slate-300">Cloud Hosting</span>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white mt-0.5">Entorno de Producción & CI/CD</h3>
+                    <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                      El backend se compila en un ejecutable JAR autocontenido (Docker/Render/Railway) con variables de entorno seguras para credenciales de BD y secret JWT. El frontend se distribuye globalmente mediante CDN (Vercel/Netlify).
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-emerald-300">Render / Railway</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-emerald-300">Vercel CDN</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-emerald-300">GitHub Actions</span>
+                  <span class="px-2.5 py-1 rounded-md bg-yokai-surfaceAlt border border-white/5 text-emerald-300">URL Pública HTTPS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 2: FLUJO DE DATOS Y TRANSACCIONALIDAD -->
+    <section id="flujo-datos" class="scroll-mt-28">
+      <div class="mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-yokai-violet">02. Ciclo de Vida y Transacciones</span>
+        <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Flujo de Compra Atómica & Prevención de Overselling</h2>
+        <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+          Visualización paso a paso de cómo el sistema procesa una orden de compra manteniendo la integridad de stock mediante límites transaccionales ACID en Spring Boot.
+        </p>
+      </div>
+
+      <div class="bezel-card">
+        <div class="bezel-inner">
+          <!-- Flow Steps Timeline -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
+            
+            <!-- Step 1 -->
+            <div class="relative p-4 rounded-xl bg-yokai-surface border border-white/5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 font-mono text-xs flex items-center justify-center font-bold">1</span>
+                  <span class="text-[10px] font-mono text-slate-500">Frontend</span>
+                </div>
+                <h4 class="font-heading font-semibold text-white text-sm">Inicio Checkout</h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  El cliente autenticado envía los datos de entrega y el contenido del carrito mediante un POST a `/api/pedidos` con el header `Authorization: Bearer &lt;JWT&gt;`.
+                </p>
+              </div>
+              <div class="mt-4 pt-2 border-t border-white/5 text-[10px] font-mono text-cyan-300">
+                Payload DTO Validado
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="relative p-4 rounded-xl bg-yokai-surface border border-white/5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-yokai-violet/20 text-yokai-violet font-mono text-xs flex items-center justify-center font-bold">2</span>
+                  <span class="text-[10px] font-mono text-slate-500">Security</span>
+                </div>
+                <h4 class="font-heading font-semibold text-white text-sm">Validación JWT</h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  `JwtAuthenticationFilter` extrae el token, verifica la firma criptográfica con la clave secreta y asegura que el usuario posea el rol `ROLE_CLIENTE`.
+                </p>
+              </div>
+              <div class="mt-4 pt-2 border-t border-white/5 text-[10px] font-mono text-purple-300">
+                SecurityContextHolder OK
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="relative p-4 rounded-xl bg-yokai-surface border border-yokai-crimson/30 flex flex-col justify-between glow-crimson">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-yokai-crimson/20 text-yokai-crimson font-mono text-xs flex items-center justify-center font-bold">3</span>
+                  <span class="text-[10px] font-mono text-yokai-crimson font-semibold">@Transactional</span>
+                </div>
+                <h4 class="font-heading font-semibold text-white text-sm">Bloqueo de Stock</h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  `PedidoService` abre una transacción ACID. Valida que `stock >= cantidad`. Si hay unidades suficientes, aplica el decremento atómico. Si no, lanza `StockInsuficienteException` (Rollback total).
+                </p>
+              </div>
+              <div class="mt-4 pt-2 border-t border-white/5 text-[10px] font-mono text-rose-300">
+                Prevención Overselling
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="relative p-4 rounded-xl bg-yokai-surface border border-white/5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-yokai-gold/20 text-yokai-gold font-mono text-xs flex items-center justify-center font-bold">4</span>
+                  <span class="text-[10px] font-mono text-slate-500">PostgreSQL</span>
+                </div>
+                <h4 class="font-heading font-semibold text-white text-sm">Persistencia ACID</h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  Se inserta el registro `Pedido` con estado `PENDIENTE` o `PAGADO`, y los ítems en `DetallePedido`. Se limpia el carrito del usuario. Commit transaccional garantizado.
+                </p>
+              </div>
+              <div class="mt-4 pt-2 border-t border-white/5 text-[10px] font-mono text-amber-300">
+                Integridad Referencial OK
+              </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="relative p-4 rounded-xl bg-yokai-surface border border-white/5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-xs flex items-center justify-center font-bold">5</span>
+                  <span class="text-[10px] font-mono text-slate-500">Respuesta</span>
+                </div>
+                <h4 class="font-heading font-semibold text-white text-sm">Confirmación 201</h4>
+                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  El servidor responde con código `201 Created` y el DTO del pedido con su ID único, número de orden y resumen financiero. El frontend muestra la pantalla de éxito.
+                </p>
+              </div>
+              <div class="mt-4 pt-2 border-t border-white/5 text-[10px] font-mono text-emerald-300">
+                Pedido Confirmado #ORD-
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: MODELO DE DATOS INICIAL (DER) -->
+    <section id="modelo-datos" class="scroll-mt-28">
+      <div class="mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-yokai-gold">03. Persistencia Relacional</span>
+        <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Modelo de Datos (DER)</h2>
+        <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+          Estructura de entidades relacionales definidas en el plan de proyecto, diseñadas para normalización, integridad referencial y alto rendimiento en consultas.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Entidad Usuario -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10 mb-3">
+              <span class="font-heading font-bold text-sm text-white">USUARIO</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-yokai-violet/20 text-yokai-violet">Entidad Auth</span>
+            </div>
+            <ul class="text-xs font-mono space-y-1.5 text-slate-300">
+              <li class="flex items-center justify-between text-amber-300"><span>PK id</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between"><span>nombre</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+              <li class="flex items-center justify-between text-emerald-400"><span>email (UQ)</span> <span class="text-slate-500">VARCHAR(120)</span></li>
+              <li class="flex items-center justify-between"><span>password</span> <span class="text-slate-500">VARCHAR(255)</span></li>
+              <li class="flex items-center justify-between text-yokai-crimson"><span>rol</span> <span class="text-slate-500">VARCHAR(20)</span></li>
+              <li class="flex items-center justify-between"><span>direccion</span> <span class="text-slate-500">TEXT</span></li>
+              <li class="flex items-center justify-between"><span>created_at</span> <span class="text-slate-500">TIMESTAMP</span></li>
+            </ul>
+            <div class="mt-3 pt-2 border-t border-white/5 text-[10px] text-slate-400">
+              Roles: <code class="text-white">CLIENTE</code>, <code class="text-white">ADMIN</code>. Contraseña encriptada con BCrypt.
+            </div>
+          </div>
+        </div>
+
+        <!-- Entidad Producto -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10 mb-3">
+              <span class="font-heading font-bold text-sm text-white">PRODUCTO</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400">Catálogo</span>
+            </div>
+            <ul class="text-xs font-mono space-y-1.5 text-slate-300">
+              <li class="flex items-center justify-between text-amber-300"><span>PK id</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between text-emerald-400"><span>sku (UQ)</span> <span class="text-slate-500">VARCHAR(50)</span></li>
+              <li class="flex items-center justify-between"><span>nombre</span> <span class="text-slate-500">VARCHAR(150)</span></li>
+              <li class="flex items-center justify-between"><span>precio</span> <span class="text-slate-500">DECIMAL(12,2)</span></li>
+              <li class="flex items-center justify-between text-yokai-crimson"><span>stock</span> <span class="text-slate-500">INTEGER</span></li>
+              <li class="flex items-center justify-between"><span>stock_minimo</span> <span class="text-slate-500">INTEGER</span></li>
+              <li class="flex items-center justify-between text-yokai-violet"><span>FK categoria_id</span> <span class="text-slate-500">BIGINT</span></li>
+              <li class="flex items-center justify-between text-yokai-violet"><span>FK marca_id</span> <span class="text-slate-500">BIGINT</span></li>
+              <li class="flex items-center justify-between"><span>especificaciones</span> <span class="text-slate-500">JSONB / TEXT</span></li>
+            </ul>
+            <div class="mt-3 pt-2 border-t border-white/5 text-[10px] text-slate-400">
+              Estado calculado: En stock (&gt;min), Últimas unidades (&lt;=min), Sin stock (0).
+            </div>
+          </div>
+        </div>
+
+        <!-- Entidad Pedido & Detalle -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10 mb-3">
+              <span class="font-heading font-bold text-sm text-white">PEDIDO / DETALLE</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Ventas</span>
+            </div>
+            <ul class="text-xs font-mono space-y-1.5 text-slate-300">
+              <li class="flex items-center justify-between text-amber-300"><span>PK id_pedido</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between text-yokai-violet"><span>FK usuario_id</span> <span class="text-slate-500">BIGINT</span></li>
+              <li class="flex items-center justify-between"><span>fecha</span> <span class="text-slate-500">TIMESTAMP</span></li>
+              <li class="flex items-center justify-between text-yokai-crimson"><span>estado</span> <span class="text-slate-500">VARCHAR(30)</span></li>
+              <li class="flex items-center justify-between"><span>total</span> <span class="text-slate-500">DECIMAL(12,2)</span></li>
+              <li class="flex items-center justify-between"><span>direccion_envio</span> <span class="text-slate-500">TEXT</span></li>
+              <li class="pt-2 text-[10px] text-slate-400 border-t border-white/5">TABLA DETALLE_PEDIDO:</li>
+              <li class="flex items-center justify-between text-amber-300"><span>PK id_detalle</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between text-yokai-violet"><span>FK pedido_id / producto_id</span></li>
+              <li class="flex items-center justify-between"><span>cantidad / precio_unit</span></li>
+            </ul>
+            <div class="mt-3 pt-2 border-t border-white/5 text-[10px] text-slate-400">
+              Relación 1 a N: Un Pedido posee múltiples DetallePedido.
+            </div>
+          </div>
+        </div>
+
+        <!-- Entidades Soporte: Categoria, Marca, Carrito -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10 mb-3">
+              <span class="font-heading font-bold text-sm text-white">CATEGORIA / CARRITO</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-yokai-gold/20 text-yokai-gold">Soporte</span>
+            </div>
+            <ul class="text-xs font-mono space-y-1.5 text-slate-300">
+              <li class="text-[11px] text-yokai-gold font-bold">CATEGORIA:</li>
+              <li class="flex items-center justify-between text-amber-300"><span>PK id</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between"><span>nombre</span> <span class="text-slate-500">VARCHAR(50)</span></li>
+              <li class="flex items-center justify-between"><span>descripcion</span> <span class="text-slate-500">TEXT</span></li>
+              <li class="pt-2 text-[11px] text-cyan-400 font-bold border-t border-white/5">CARRITO_ITEM:</li>
+              <li class="flex items-center justify-between text-amber-300"><span>PK id</span> <span class="text-slate-500">BIGSERIAL</span></li>
+              <li class="flex items-center justify-between text-yokai-violet"><span>FK usuario_id / producto_id</span></li>
+              <li class="flex items-center justify-between"><span>cantidad</span> <span class="text-slate-500">INTEGER</span></li>
+              <li class="pt-2 text-[11px] text-rose-400 font-bold border-t border-white/5">RESERVA_STOCK (Extra):</li>
+              <li class="flex items-center justify-between text-slate-400"><span>producto_id, usuario_id, exp</span></li>
+            </ul>
+            <div class="mt-3 pt-2 border-t border-white/5 text-[10px] text-slate-400">
+              Categorías temáticas Yokai: Oni (GPUs), Kitsune (CPUs), Tengu (RAM).
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 4: CONTRATO DE API REST & ENDPOINTS -->
+    <section id="api-rest" class="scroll-mt-28">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-cyan-400">04. Contrato de Integración</span>
+          <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Endpoints de la API REST</h2>
+          <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+            Especificación oficial de rutas para la comunicación entre el frontend de React y el backend de Spring Boot, con esquemas de autenticación y roles requeridos.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-slate-400">Formato:</span>
+          <span class="px-2 py-1 rounded bg-white/5 border border-white/10 font-mono text-xs text-white">application/json</span>
+          <span class="px-2 py-1 rounded bg-yokai-violet/20 border border-yokai-violet/30 font-mono text-xs text-yokai-violet">Swagger 3.0</span>
+        </div>
+      </div>
+
+      <div class="bezel-card">
+        <div class="bezel-inner overflow-x-auto p-0">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-white/10 bg-white/[0.02] text-slate-400 font-mono">
+                <th class="py-3 px-4">Método</th>
+                <th class="py-3 px-4">Ruta (Endpoint)</th>
+                <th class="py-3 px-4">Descripción de Negocio</th>
+                <th class="py-3 px-4">Autenticación / Rol</th>
+                <th class="py-3 px-4">Códigos HTTP</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 font-mono text-slate-300">
+              <!-- Auth -->
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">POST</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/auth/register</td>
+                <td class="py-3 px-4 font-body text-slate-400">Registro de nuevos clientes con hash BCrypt</td>
+                <td class="py-3 px-4 text-slate-500">Público</td>
+                <td class="py-3 px-4 text-emerald-400">201, 400</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">POST</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/auth/login</td>
+                <td class="py-3 px-4 font-body text-slate-400">Autenticación y generación de JWT Bearer Token</td>
+                <td class="py-3 px-4 text-slate-500">Público</td>
+                <td class="py-3 px-4 text-emerald-400">200, 401</td>
+              </tr>
+
+              <!-- Productos -->
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 font-bold">GET</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/productos</td>
+                <td class="py-3 px-4 font-body text-slate-400">Catálogo con filtros por categoría, marca, precio y paginación</td>
+                <td class="py-3 px-4 text-slate-500">Público</td>
+                <td class="py-3 px-4 text-emerald-400">200</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 font-bold">GET</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/productos/{id}</td>
+                <td class="py-3 px-4 font-body text-slate-400">Detalle con especificaciones completas y stock calculado</td>
+                <td class="py-3 px-4 text-slate-500">Público</td>
+                <td class="py-3 px-4 text-emerald-400">200, 404</td>
+              </tr>
+
+              <!-- Carrito -->
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 font-bold">GET</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/carrito</td>
+                <td class="py-3 px-4 font-body text-slate-400">Obtiene los productos agregados al carrito del usuario actual</td>
+                <td class="py-3 px-4 text-yokai-violet font-semibold">Bearer JWT (Cliente)</td>
+                <td class="py-3 px-4 text-emerald-400">200, 401</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">POST</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/carrito/items</td>
+                <td class="py-3 px-4 font-body text-slate-400">Agrega o incrementa un producto validando stock máximo</td>
+                <td class="py-3 px-4 text-yokai-violet font-semibold">Bearer JWT (Cliente)</td>
+                <td class="py-3 px-4 text-emerald-400">200, 400</td>
+              </tr>
+
+              <!-- Pedidos / Checkout -->
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">POST</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/pedidos</td>
+                <td class="py-3 px-4 font-body text-slate-400">Checkout atómico: crea orden, descuenta stock y vacía carrito</td>
+                <td class="py-3 px-4 text-yokai-violet font-semibold">Bearer JWT (Cliente)</td>
+                <td class="py-3 px-4 text-emerald-400">201, 400, 409</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 font-bold">GET</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/pedidos/mis-pedidos</td>
+                <td class="py-3 px-4 font-body text-slate-400">Historial completo de pedidos realizados por el usuario</td>
+                <td class="py-3 px-4 text-yokai-violet font-semibold">Bearer JWT (Cliente)</td>
+                <td class="py-3 px-4 text-emerald-400">200, 401</td>
+              </tr>
+
+              <!-- Panel Admin -->
+              <tr class="hover:bg-white/[0.02] transition-colors bg-yokai-crimson/5">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">CRUD</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/admin/productos/**</td>
+                <td class="py-3 px-4 font-body text-slate-400">Alta, baja y modificación de productos y especificaciones</td>
+                <td class="py-3 px-4 text-yokai-crimson font-bold">ROLE_ADMIN</td>
+                <td class="py-3 px-4 text-emerald-400">200, 201, 403</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors bg-yokai-crimson/5">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold">PATCH</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/admin/stock/{id}</td>
+                <td class="py-3 px-4 font-body text-slate-400">Actualización rápida de unidades en inventario y stock mínimo</td>
+                <td class="py-3 px-4 text-yokai-crimson font-bold">ROLE_ADMIN</td>
+                <td class="py-3 px-4 text-emerald-400">200, 403</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition-colors bg-yokai-crimson/5">
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold">PATCH</span></td>
+                <td class="py-3 px-4 text-white font-semibold">/api/admin/pedidos/{id}/estado</td>
+                <td class="py-3 px-4 font-body text-slate-400">Transición de estados: PENDIENTE → PREPARACIÓN → ENVIADO</td>
+                <td class="py-3 px-4 text-yokai-crimson font-bold">ROLE_ADMIN</td>
+                <td class="py-3 px-4 text-emerald-400">200, 403</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: MOTOR DE COMPATIBILIDAD (INNOVACIÓN Y DIFERENCIAL) -->
+    <section id="compatibilidad" class="scroll-mt-28">
+      <div class="mb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-emerald-400">05. Propuesta de Valor & Innovación</span>
+        <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Motor de Compatibilidad de Hardware</h2>
+        <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+          Algoritmo inteligente en tiempo real que valida la correspondencia técnica entre componentes seleccionados, previniendo compras incompatibles y errores de ensamblado.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Rule 1: Sockets CPU / Motherboard -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-yokai-crimson/10 border border-yokai-crimson/30 flex items-center justify-center text-yokai-crimson font-mono text-sm font-bold">
+                01
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-white text-base">Socket CPU ↔ Placa Madre</h4>
+                <span class="text-[10px] font-mono text-slate-400">Validación Física de Conector</span>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              El motor compara el identificador normalizado de zócalo. Por ejemplo, un procesador <strong class="text-white">AMD Ryzen 7 (Socket AM5)</strong> requiere obligatoriamente una placa madre con chipset <strong class="text-white">AM5 (B650 / X670)</strong>. Si no coincide, alerta de incompatibilidad crítica y deshabilita el agregado simultáneo al carrito.
+            </p>
+            <div class="mt-4 p-3 rounded-lg bg-black/40 border border-white/5 font-mono text-[11px] text-slate-300">
+              <code>cpu.socket == motherboard.socket</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rule 2: Consumo Energético (TDP vs PSU) -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-yokai-violet/10 border border-yokai-violet/30 flex items-center justify-center text-yokai-violet font-mono text-sm font-bold">
+                02
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-white text-base">Consumo Energético (TDP)</h4>
+                <span class="text-[10px] font-mono text-slate-400">Dimensionamiento de Fuente</span>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Calcula el consumo total sumando el TDP estimado de CPU + GPU + margen del sistema (25% overhead). Si la fuente elegida entrega menor potencia a la recomendada en la línea de 12V, emite una advertencia de riesgo de apagados repentinos.
+            </p>
+            <div class="mt-4 p-3 rounded-lg bg-black/40 border border-white/5 font-mono text-[11px] text-slate-300">
+              <code>psu.watts &gt;= (cpu.tdp + gpu.tdp) * 1.25</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rule 3: Espacio Físico (GPU vs Gabinete) -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-yokai-gold/10 border border-yokai-gold/30 flex items-center justify-center text-yokai-gold font-mono text-sm font-bold">
+                03
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-white text-base">Dimensiones & Despeje</h4>
+                <span class="text-[10px] font-mono text-slate-400">Compatibilidad de Gabinete</span>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Verifica el largo de la placa de video (GPU Length en mm) contra la longitud máxima soportada por el gabinete (Case Max GPU Clearance) y la altura del disipador de CPU respecto al ancho del chasis.
+            </p>
+            <div class="mt-4 p-3 rounded-lg bg-black/40 border border-white/5 font-mono text-[11px] text-slate-300">
+              <code>gpu.length_mm &lt;= case.max_gpu_mm</code>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 6: ROADMAP, GOBERNANZA & CHECKLIST -->
+    <section id="roadmap" class="scroll-mt-28">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-yokai-crimson">06. Ejecución & Planificación</span>
+          <h2 class="font-heading text-3xl sm:text-4xl font-bold text-white mt-1">Roadmap & Checklist de Entrega</h2>
+          <p class="text-slate-400 text-sm mt-2 max-w-2xl">
+            Cronograma de 3,5 semanas (25 días) para el equipo de 10 integrantes, con fecha estricta de congelamiento y entrega final el 10 de noviembre de 2026.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yokai-surface border border-white/10 text-xs font-mono">
+          <span class="text-slate-400">Progreso Estimado:</span>
+          <span class="text-emerald-400 font-bold">Fases 0 a 4 Activas</span>
+        </div>
+      </div>
+
+      <!-- Roadmap Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        
+        <!-- Fase 0 y 1 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-[10px] font-mono text-cyan-400 font-bold">16 – 20 OCTUBRE</span>
+            <h4 class="font-heading font-bold text-white text-sm mt-1">Fase 0 & 1: Diseño & Acuerdos</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Decisión de stack, creación del repo en GitHub, DER inicial, wireframes, identidad Yokai y contrato de endpoints de la API.
+            </p>
+            <div class="mt-3 text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+              <span>✓ Completado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 2 y 3 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-[10px] font-mono text-yokai-violet font-bold">19 – 28 OCTUBRE</span>
+            <h4 class="font-heading font-bold text-white text-sm mt-1">Fase 2 & 3: Backend & Base de Datos</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Proyecto Spring Boot, JWT, entidades JPA, CRUD de catálogo, primer deploy en Render/Railway y carga de 20 a 30 productos.
+            </p>
+            <div class="mt-3 text-[10px] font-mono text-amber-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              <span>En progreso activo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 4 y 5 -->
+        <div class="bezel-card">
+          <div class="bezel-inner">
+            <span class="text-[10px] font-mono text-yokai-crimson font-bold">26 OCT – 3 NOVIEMBRE</span>
+            <h4 class="font-heading font-bold text-white text-sm mt-1">Fase 4 & 5: Frontend & Integración</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Conexión React con API real, carrito y checkout integrados, panel de administración y pruebas completas en producción.
+            </p>
+            <div class="mt-3 text-[10px] font-mono text-slate-400">
+              Próximo hito crítico
+            </div>
+          </div>
+        </div>
+
+        <!-- Fase 6 y 7 -->
+        <div class="bezel-card">
+          <div class="bezel-inner border-yokai-gold/20">
+            <span class="text-[10px] font-mono text-yokai-gold font-bold">4 – 10 NOVIEMBRE</span>
+            <h4 class="font-heading font-bold text-white text-sm mt-1">Fase 6 & 7: Congelamiento & Video</h4>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              4 Nov: Congelamiento total. Pruebas JUnit, README final, manual de uso, y grabación del video demostrativo de máx 30 min con 10 cámaras.
+            </p>
+            <div class="mt-3 text-[10px] font-mono text-yokai-gold font-bold">
+              Entrega Martes 10 Nov
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Checklist de Entrega Final Interactivo -->
+      <div class="bezel-card">
+        <div class="bezel-inner">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+            <h3 class="font-heading font-bold text-base text-white">Checklist de Criterios de Aprobación Obligatorios (Cátedra)</h3>
+            <span class="text-xs font-mono text-slate-400">Sección 12 del Plan Oficial</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Autenticación de usuarios funcionando</span>
+                <span class="text-slate-400 text-[11px]">Registro, login con JWT y roles de cliente y administrador.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Base de datos con script de creación y seed</span>
+                <span class="text-slate-400 text-[11px]">PostgreSQL normalizado con datos de prueba cargados.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Carrito de compras nativo completo</span>
+                <span class="text-slate-400 text-[11px]">Agregar, editar cantidad, validar stock y flujo de checkout.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Deploy funcional accesible por URL pública</span>
+                <span class="text-slate-400 text-[11px]">Backend y frontend corriendo en la nube y verificados.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Repositorio GitHub con trazabilidad de 10 integrantes</span>
+                <span class="text-slate-400 text-[11px]">Historial de commits, ramas y README completo para el profesor.</span>
+              </div>
+            </label>
+
+            <label class="flex items-start gap-3 p-2.5 rounded-lg bg-yokai-surface border border-white/5 cursor-pointer hover:bg-white/[0.03]">
+              <input type="checkbox" checked disabled class="mt-0.5 rounded border-white/20 bg-black/40 text-yokai-crimson focus:ring-0">
+              <div>
+                <span class="font-medium text-white block">Video Demostrativo (máx 30 min) con cámaras encendidas</span>
+                <span class="text-slate-400 text-[11px]">Presentación, tecnologías, manual de uso y explicación de código.</span>
+              </div>
+            </label>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-white/10 bg-yokai-black/80 backdrop-blur-xl py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-400">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center font-bold text-white text-xs border border-white/10">
+          鬼
+        </div>
+        <div>
+          <span class="text-white font-medium">Yokai Hardware</span> — Programación IV
+          <span class="block text-[11px] text-slate-500">UTN Facultad Regional San Rafael • Mendoza, Argentina</span>
+        </div>
+      </div>
+
+      <div class="font-mono text-center md:text-right">
+        <span class="text-slate-300">Equipo de Desarrollo:</span> <span class="text-yokai-crimson">Print("Estoy Cansado Jefe")</span>
+        <div class="text-[11px] text-slate-500 mt-0.5">Arquitectura de Sistema • Ciclo Lectivo 2026</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- INTERACTIVE LOGIC SCRIPT -->
+  <script>
+    // Tier Filter switcher logic
+    function switchTier(tier) {
+      const blocks = document.querySelectorAll('.tier-block');
+      const buttons = document.querySelectorAll('.tier-tab-btn');
+      
+      // Update button styling
+      buttons.forEach(btn => {
+        btn.classList.remove('bg-white/10', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+      const activeBtn = document.getElementById('btn-' + tier);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white/10', 'text-white');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      // Filter tier cards
+      blocks.forEach(block => {
+        const blockTier = block.getAttribute('data-tier');
+        if (tier === 'all' || blockTier === tier || blockTier === 'all') {
+          block.style.display = 'block';
+          block.style.opacity = '1';
+        } else {
+          block.style.display = 'none';
+          block.style.opacity = '0';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
